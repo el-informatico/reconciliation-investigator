@@ -63,13 +63,15 @@ from evals.cases import test_cases
 from agents.model import get_model
 
 # The four LLM-judged evaluators default to model=None, which the SDK
-# resolves to a Bedrock model — unusable under the single-credential
-# Z.AI setup (observed live 2026-09-04: every judge row failed until the
-# judges were wired to the same GLM-5.3 model as the graph). One shared
-# judge model; rubrics and judge prompts untouched. max_tokens=8192:
-# tool-level judge prompts embed full tool inputs/outputs and blew the
-# default 4096 cap live (MaxTokensReachedException, sequential run
-# 2026-09-04) — capacity, not rubric.
+# resolves to a Bedrock model — unusable here (observed live
+# 2026-09-04: every judge row failed until the judges were wired to the
+# same provider-backed model as the graph). One shared judge model via
+# agents.model.get_model() — Groq under the 2026-09-04 credential policy
+# (see the policy note there); rubrics and judge prompts untouched.
+# max_tokens=8192: tool-level judge prompts embed full tool
+# inputs/outputs and blew the default 4096 cap live
+# (MaxTokensReachedException, sequential run 2026-09-04) — capacity,
+# not rubric.
 judge_model = get_model(max_tokens=8192)
 
 # Force tools to read from the seed dataset instead of any real system.
