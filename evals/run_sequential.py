@@ -77,9 +77,24 @@ def main() -> int:
             try:
                 outputs = evaluator.evaluate(data)
             except Exception as exc:
+                # A crashed judge is a NOT-PASSED row (reviewer condition,
+                # 2026-09-04): never shrink the denominator by dropping it.
                 print(f"[seq]   evaluator {type(evaluator).__name__} FAILED: {exc}", flush=True)
                 traceback.print_exc()
-                outputs = []
+                outputs = []  # replaced by the judge-error row below
+                record = {
+                    "score": 0.0,
+                    "test_pass": False,
+                    "reason": f"judge crashed: {type(exc).__name__}: {exc}",
+                    "label": "judge-error",
+                }
+                record.update({"case": case.name, "evaluator": type(evaluator).__name__})
+                rows.append(record)
+                print(
+                    f"[seq]   {type(evaluator).__name__}: pass=False score=0.0 label=judge-error",
+                    flush=True,
+                )
+                continue
             for row in outputs:
                 record = row.model_dump()
                 record.update({"case": case.name, "evaluator": type(evaluator).__name__})

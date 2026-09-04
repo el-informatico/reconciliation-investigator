@@ -296,6 +296,79 @@ def test_run_case_with_gate_approve_path_end_to_end_with_stub_graph() -> None:
     assert tickets[-1]["status"] == "resolved"
 
 
+def test_approve_executes_even_when_classifier_says_no_correction() -> None:
+    # Audit finding 3's scenario (reviewer-mandated test): the human
+    # approved a drafted correction while the classifier's verdict said
+    # requires_correction=false — human authority executes, never silent.
+    draft, ticket = _draft_and_ticket()
+
+    def fake_graph_factory(trace_attributes=None):
+        class FakeGraph:
+            def __call__(self, instruction: str):
+                return SimpleNamespace(
+                    execution_order=[
+                        SimpleNamespace(node_id="detector_investigator"),
+                        SimpleNamespace(node_id="classifier"),
+                        SimpleNamespace(node_id="reporter"),
+                    ],
+                    results={
+                        "classifier": SimpleNamespace(
+                            result='{"root_cause": "SYNC_LAG", "confidence": 0.9, "requires_correction": false}'
+                        ),
+                        "reporter": SimpleNamespace(result="case file"),
+                    },
+                )
+
+        return FakeGraph()
+
+    outcome = run_case_with_gate(
+        "Investigate C-1001",
+        case_id="C-1001",
+        decide=lambda case_file, draft_record: GateDecision(GateAction.APPROVE),
+        build_graph=fake_graph_factory,
+    )
+    correction = outcome["outcome"]["correction"]
+    assert correction["status"] == "applied"
+    tickets = [json.loads(line) for line in (seed_data.RUNTIME_DIR / "tickets.jsonl").read_text().splitlines()]
+    assert tickets[-1]["status"] == "resolved"
+
+
+def test_max_human_rounds_exhaustion_is_audited_and_surfaced() -> None:
+    # Audit finding 6's scenario (reviewer-mandated test): a decide() that
+    # always requests more info must end with an explicit, audited
+    # exhaustion marker — never a silently dropped final review.
+    def fake_graph_factory(trace_attributes=None):
+        class FakeGraph:
+            def __call__(self, instruction: str):
+                return SimpleNamespace(
+                    execution_order=[
+                        SimpleNamespace(node_id="detector_investigator"),
+                        SimpleNamespace(node_id="classifier"),
+                        SimpleNamespace(node_id="reporter"),
+                    ],
+                    results={
+                        "classifier": SimpleNamespace(
+                            result='{"root_cause": "UNKNOWN", "confidence": 0.5, "requires_correction": false}'
+                        ),
+                        "reporter": SimpleNamespace(result="case file"),
+                    },
+                )
+
+        return FakeGraph()
+
+    outcome = run_case_with_gate(
+        "Investigate C-1001",
+        case_id="C-1001",
+        decide=lambda case_file, draft_record: GateDecision(
+            GateAction.REQUEST_MORE_INFO, note="keep digging"
+        ),
+        build_graph=fake_graph_factory,
+    )
+    assert outcome["outcome"].get("max_rounds_exhausted") is True
+    audits = [json.loads(line) for line in (seed_data.RUNTIME_DIR / "audit_log.jsonl").read_text().splitlines()]
+    assert any(a["type"] == "gate_rounds_exhausted" for a in audits)
+
+
 def test_run_case_with_gate_request_more_info_reinvokes_graph_with_hint() -> None:
     calls = []
 

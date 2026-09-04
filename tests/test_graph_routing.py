@@ -88,6 +88,19 @@ def test_extract_json_object_handles_prose_nesting_and_strings() -> None:
     assert extract_json_object('{"broken": ') is None
 
 
+def test_extract_json_object_multiple_objects_and_failed_first_candidate() -> None:
+    # Reviewer-mandated (audit finding 2): multiple objects — first valid
+    # one wins; an unparseable first candidate is skipped, scanning
+    # resumes at the next object rather than returning None.
+    assert extract_json_object('first {"a": 1} then {"b": 2}') == {"a": 1}
+    assert extract_json_object('oops {"a": unquoted junk} then {"b": 2}') == {"b": 2}
+    assert extract_json_object('only {"a": unquoted junk} here') is None
+    # A brace inside a quoted string is never treated as an object start.
+    assert extract_json_object('illustration "{"field": "balance"}" — verdict: {"root_cause": "SYNC_LAG"}') == {
+        "root_cause": "SYNC_LAG"
+    }
+
+
 def test_threshold_is_the_contracted_value() -> None:
     assert CONFIDENCE_THRESHOLD == 0.7
     assert MAX_INVESTIGATION_ROUNDS == 3
