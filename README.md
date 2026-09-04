@@ -41,6 +41,18 @@ system can apply a correction even if it "decided" to; the write path
 doesn't exist for it. This is enforced by tool registration, not by prompt
 instruction — see section 4 of the build contract.
 
+## Scoping decisions (explicit, not silent omissions)
+
+Per build-contract §2.4, the human approval gate ships in this pass as
+an **orchestrator-level programmatic interface**
+(`orchestrator/human_gate.py` + `orchestrator/correction_executor.py`):
+a single-case decision flow with signed, case-scoped, single-use
+approval tokens and a full audit trail. The single-case approval
+**screen** (UI) is deferred to the next build pass, as are multi-case
+queue management, authentication, and audit search — all explicitly out
+of scope for the demo per §2.4. AWS Bedrock AgentCore deployment
+(`deploy/`) remains a documented placeholder in this pass.
+
 ## Repo structure
 
 ```

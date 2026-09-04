@@ -21,6 +21,25 @@ def _append_jsonl(name: str, record: dict) -> None:
         f.write(json.dumps(record) + "\n")
 
 
+def update_ticket(ticket_id: str, **fields) -> dict | None:
+    """Update one ticket record in the runtime store (plain helper — not a
+    Strands tool; used by the orchestrator's gate/executor path)."""
+    path = runtime_path("tickets.jsonl")
+    if not path.exists():
+        return None
+    updated = None
+    out_lines = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        record = json.loads(line)
+        if record.get("ticket_id") == ticket_id:
+            record.update(fields)
+            updated = record
+        out_lines.append(json.dumps(record))
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(out_lines) + "\n")
+    return updated
+
+
 def _now() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat()
 
