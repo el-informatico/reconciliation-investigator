@@ -37,6 +37,7 @@ run_case_with_gate().
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 from typing import Any
 
@@ -66,35 +67,63 @@ EXECUTION_TIMEOUT_SECONDS = 1200
 
 
 def extract_json_object(text: str) -> dict[str, Any] | None:
-    """First balanced {...} object in text (quote-aware); None if absent."""
-    start = text.find("{")
-    if start == -1:
-        return None
-    depth = 0
-    in_string = False
-    escaped = False
-    for index in range(start, len(text)):
-        char = text[index]
-        if in_string:
-            if escaped:
-                escaped = False
-            elif char == "\\":
-                escaped = True
-            elif char == '"':
-                in_string = False
-            continue
+    """First parseable {...} object whose opening brace sits OUTSIDE any
+    string literal (audit finding 2, 2026-09-04: the previous first-{ scan
+    returned a brace inside a quoted illustration as "the verdict" and
+    missed the real object). Candidates that fail to parse as dicts are
+    skipped, scanning resumes after them."""
+    candidates: list[str] = []
+    i = 0
+    n = len(text)
+    while i < n:
+        char = text[i]
         if char == '"':
-            in_string = True
-        elif char == "{":
-            depth += 1
-        elif char == "}":
-            depth -= 1
-            if depth == 0:
-                try:
-                    parsed = json.loads(text[start : index + 1])
-                except json.JSONDecodeError:
-                    return None
-                return parsed if isinstance(parsed, dict) else None
+            i += 1
+            while i < n:
+                if text[i] == "\\":
+                    i += 2
+                    continue
+                if text[i] == '"':
+                    i += 1
+                    break
+                i += 1
+            continue
+        if char == "{":
+            depth = 0
+            in_string = False
+            escaped = False
+            j = i
+            while j < n:
+                c = text[j]
+                if in_string:
+                    if escaped:
+                        escaped = False
+                    elif c == "\\":
+                        escaped = True
+                    elif c == '"':
+                        in_string = False
+                else:
+                    if c == '"':
+                        in_string = True
+                    elif c == "{":
+                        depth += 1
+                    elif c == "}":
+                        depth -= 1
+                        if depth == 0:
+                            candidates.append(text[i : j + 1])
+                            j += 1
+                            break
+                j += 1
+            i = j if j > i else i + 1
+            continue
+        i += 1
+    for candidate in candidates:
+        try:
+            parsed = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            return parsed
     return None
 
 
@@ -166,11 +195,22 @@ def edge_classifier_to_reporter(state: Any) -> bool:
 
 
 def edge_detector_to_reporter(state: Any) -> bool:
-    """Mirror of edge_classifier_to_reporter: exists only so the
-    reporter's propagated input includes the evidence bundle (input
-    propagation is direct-edges-only in the installed API). Same
-    re-execution guard."""
-    return edge_classifier_to_reporter(state)
+    """Mirror of edge_classifier_to_reporter, gated on a SETTLED cycle:
+    a verdict must exist and the classifier must have run at least as
+    many rounds as the detector. Without those clauses the predicate is
+    vacuously True after the detector's first batch (verdict is None ->
+    not-cycle), co-nominating the reporter WITH the classifier — the
+    reporter then runs concurrently, never sees a verdict, and invents
+    its own 'classifier verdict'; and once it completes, the reporter-
+    completed guard blocks §1's cap force-route forever (audit finding
+    1, 2026-09-04; empirically validated fix: reporter runs last, with
+    verdict + evidence in its input, in every scenario)."""
+    return (
+        verdict_from_state(state) is not None
+        and _classifier_rounds(state) >= detector_rounds_completed(state)
+        and not _cycle_should_continue(state)
+        and not _reporter_completed(state)
+    )
 
 
 def edge_detector_to_classifier(state: Any) -> bool:
@@ -180,17 +220,26 @@ def edge_detector_to_classifier(state: Any) -> bool:
     return _classifier_rounds(state) < MAX_INVESTIGATION_ROUNDS
 
 
-def build_reconciliation_graph(trace_attributes: dict | None = None) -> Graph:
+def build_reconciliation_graph(trace_attributes: dict | None = None, node_builder=None) -> Graph:
     """Build the §1 graph. trace_attributes are applied to EVERY agent
     node (the builder cannot set them graph-wide; tagging all nodes keeps
-    the eval session mapper's filtering consistent)."""
+    the eval session mapper's filtering consistent). node_builder is a
+    test seam: callable(node_id) -> executor, used by
+    tests/test_graph_engine.py to drive the REAL engine with fake
+    executors (the nomination-order tests that would have caught the
+    vacuous-mirror defect)."""
+    if node_builder is None:
+        def node_builder(node_id):
+            if node_id == DETECTOR_NODE:
+                return build_detector_investigator(trace_attributes=trace_attributes)
+            if node_id == CLASSIFIER_NODE:
+                return build_classifier(trace_attributes=trace_attributes)
+            return build_reporter(trace_attributes=trace_attributes)
+
     builder = GraphBuilder()
-    builder.add_node(
-        build_detector_investigator(trace_attributes=trace_attributes),
-        node_id=DETECTOR_NODE,
-    )
-    builder.add_node(build_classifier(trace_attributes=trace_attributes), node_id=CLASSIFIER_NODE)
-    builder.add_node(build_reporter(trace_attributes=trace_attributes), node_id=REPORTER_NODE)
+    builder.add_node(node_builder(DETECTOR_NODE), node_id=DETECTOR_NODE)
+    builder.add_node(node_builder(CLASSIFIER_NODE), node_id=CLASSIFIER_NODE)
+    builder.add_node(node_builder(REPORTER_NODE), node_id=REPORTER_NODE)
 
     builder.add_edge(DETECTOR_NODE, CLASSIFIER_NODE, condition=edge_detector_to_classifier)
     builder.add_edge(CLASSIFIER_NODE, DETECTOR_NODE, condition=edge_classifier_to_detector)
@@ -217,14 +266,16 @@ def verdict_from_result(result: Any) -> dict[str, Any]:
     verdict = verdict_from_state(result) or {}
     confidence = verdict.get("confidence", 0.0)
     try:
-        low = float(confidence) < CONFIDENCE_THRESHOLD
+        confidence = float(confidence)
+        low = confidence < CONFIDENCE_THRESHOLD
     except (TypeError, ValueError):
+        confidence = 0.0
         low = True
+    verdict["confidence"] = confidence
     capped = detector_rounds_in_result(result) >= MAX_INVESTIGATION_ROUNDS
     if capped and low:
         verdict = dict(verdict)
         verdict["root_cause"] = "UNKNOWN"
-        verdict["confidence"] = float(confidence) if isinstance(confidence, (int, float)) else 0.0
         verdict["capped"] = True
     return verdict
 
@@ -270,7 +321,7 @@ def run_case_with_gate(
         verdict = verdict_from_result(result)
         draft = latest_pending_draft(case_id)
         case_file = str(getattr(getattr(result, "results", {}).get(REPORTER_NODE), "result", ""))
-        gate = run_human_gate(case_file, draft, decide(case_file, draft))
+        gate = run_human_gate(case_file, draft, decide(case_file, draft), case_id=case_id)
         outcome = gate
         if gate["action"] is GateAction.REQUEST_MORE_INFO:
             # §2.4: route back with the human's note as the hint. The
@@ -280,7 +331,12 @@ def run_case_with_gate(
                 f"{instruction}\n\ninvestigation_hint: {gate['investigation_hint']}"
             )
             continue
-        if gate["action"] is GateAction.APPROVE and verdict.get("requires_correction"):
+        if gate["action"] is GateAction.APPROVE and draft is not None:
+            # Human authority (audit finding 3): an explicit APPROVE of a
+            # drafted correction executes it even if the classifier's
+            # requires_correction diverged — the gate exists precisely to
+            # let a human outrank the classifier, so the approval is never
+            # silently dropped.
             ticket = latest_ticket(case_id) or {}
             executed = correction_executor.execute_correction(
                 gate["approval_token"],
@@ -289,7 +345,19 @@ def run_case_with_gate(
                 new_value=draft["proposed_value"],
                 ticket_id=ticket.get("ticket_id", ""),
                 approver="human",
+                draft_id=draft.get("draft_id", ""),
             )
-            outcome = {"gate": gate, "correction": executed}
+            outcome = {"gate": gate, "correction": executed, "verdict": verdict}
         break
+    else:
+        # Loop exhausted while still requesting more info (audit finding
+        # 6): surface it — never drop the final gate review silently.
+        from orchestrator.human_gate import audit_gate_event
+
+        audit_gate_event({
+            "type": "gate_rounds_exhausted",
+            "case_id": case_id,
+            "at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        })
+        outcome = dict(outcome, max_rounds_exhausted=True)
     return {"result": result, "verdict": verdict_from_result(result), "outcome": outcome}

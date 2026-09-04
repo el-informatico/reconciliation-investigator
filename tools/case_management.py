@@ -40,6 +40,46 @@ def update_ticket(ticket_id: str, **fields) -> dict | None:
     return updated
 
 
+def update_tickets_for_case(case_id: str, status: str, **fields) -> int:
+    """Set the status of EVERY ticket for one case (reject/resolve close
+    all open tickets — audit finding 5: re-invocation rounds accumulate
+    tickets). Returns how many were updated."""
+    path = runtime_path("tickets.jsonl")
+    if not path.exists():
+        return 0
+    changed = 0
+    out_lines = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        record = json.loads(line)
+        if record.get("case_id") == case_id and record.get("status") == "open":
+            record.update(fields, status=status)
+            changed += 1
+        out_lines.append(json.dumps(record))
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(out_lines) + "\n")
+    return changed
+
+
+def update_draft(draft_id: str, **fields) -> dict | None:
+    """Update one draft record (plain helper — draft lifecycle:
+    pending_approval -> approved -> applied / correction_failed /
+    rejected)."""
+    path = runtime_path("drafts.jsonl")
+    if not path.exists() or not draft_id:
+        return None
+    updated = None
+    out_lines = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        record = json.loads(line)
+        if record.get("draft_id") == draft_id:
+            record.update(fields)
+            updated = record
+        out_lines.append(json.dumps(record))
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(out_lines) + "\n")
+    return updated
+
+
 def _now() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat()
 

@@ -138,14 +138,19 @@ def test_gate_approve_issues_scoped_token_and_audits() -> None:
     assert any(json.loads(line)["type"] == "gate_approval" for line in audits)
 
 
-def test_gate_reject_closes_ticket_with_reason() -> None:
-    draft, ticket = _draft_and_ticket()
-    outcome = run_human_gate("case file", latest_draft(), GateDecision(GateAction.REJECT, reason="wrong account"))
+def test_gate_reject_closes_ticket_with_reason_and_case_linkage() -> None:
+    _draft_and_ticket()
+    outcome = run_human_gate(
+        "case file", None, GateDecision(GateAction.REJECT, reason="wrong account"), case_id="C-1001"
+    )
     assert outcome["action"] is GateAction.REJECT
-    tickets = (seed_data.RUNTIME_DIR / "tickets.jsonl").read_text().splitlines()
-    record = json.loads(tickets[-1])
-    assert record["status"] == "rejected"
-    assert record["rejection_reason"] == "wrong account"
+    assert outcome["tickets_closed"] >= 1
+    tickets = [json.loads(line) for line in (seed_data.RUNTIME_DIR / "tickets.jsonl").read_text().splitlines()]
+    assert all(t["status"] == "rejected" for t in tickets if t["case_id"] == "C-1001")
+    assert any(t.get("rejection_reason") == "wrong account" for t in tickets)
+    audits = [json.loads(line) for line in (seed_data.RUNTIME_DIR / "audit_log.jsonl").read_text().splitlines()]
+    rejection = [a for a in audits if a["type"] == "gate_rejection"][0]
+    assert rejection["case_id"] == "C-1001"
 
 
 def latest_draft():
@@ -171,19 +176,23 @@ def test_executor_applies_with_real_before_after_and_resolves_ticket() -> None:
     before_sha = _sha256(SEED)
     result = execute_correction(
         token, case_id="C-1001", field="balance", new_value=1250.00,
-        ticket_id=ticket["ticket_id"], approver="human-jrivera",
+        ticket_id=ticket["ticket_id"], approver="human-jrivera", draft_id=draft["draft_id"],
     )
     assert result["status"] == "applied"
-    assert result["before"] == 1250.00  # modern seed value (read-your-writes overlay was empty)
-    assert result["after"] == 1250.00  # the corrected value is now effective
+    assert result["before"] == 1250.00  # modern seed value (overlay empty pre-correction)
+    assert result["after"] == 1250.00  # corrected value now effective
+    assert result["no_op"] is True  # honest flag: effective value did not change (seed oddity)
     audits = [json.loads(line) for line in (seed_data.RUNTIME_DIR / "audit_log.jsonl").read_text().splitlines()]
     applied = [a for a in audits if a["type"] == "correction_applied"][0]
     assert applied["approver"] == "human-jrivera"
     assert applied["ticket_id"] == ticket["ticket_id"]
     assert applied["field"] == "balance"
+    assert applied["no_op"] is True
     tickets = [json.loads(line) for line in (seed_data.RUNTIME_DIR / "tickets.jsonl").read_text().splitlines()]
     assert tickets[-1]["status"] == "resolved"
     assert tickets[-1]["audit_entry_id"] == result["audit_entry_id"]
+    drafts = [json.loads(line) for line in (seed_data.RUNTIME_DIR / "drafts.jsonl").read_text().splitlines()]
+    assert drafts[-1]["status"] == "applied"  # draft lifecycle: never re-approvable
     assert _sha256(SEED) == before_sha  # AC2: seed immutable under a correction
 
 
@@ -193,14 +202,41 @@ def test_executor_invalid_token_fails_and_marks_ticket() -> None:
     # Wrong value at execution time -> scope mismatch.
     result = execute_correction(
         token, case_id="C-1001", field="balance", new_value=999.00,
-        ticket_id=ticket["ticket_id"], approver="human",
+        ticket_id=ticket["ticket_id"], approver="human", draft_id=draft["draft_id"],
     )
     assert result["status"] == "failed"
     assert "token validation failed" in result["error"]
     tickets = [json.loads(line) for line in (seed_data.RUNTIME_DIR / "tickets.jsonl").read_text().splitlines()]
     assert tickets[-1]["status"] == "correction_failed"
+    drafts = [json.loads(line) for line in (seed_data.RUNTIME_DIR / "drafts.jsonl").read_text().splitlines()]
+    assert drafts[-1]["status"] == "correction_failed"
     audits = [json.loads(line) for line in (seed_data.RUNTIME_DIR / "audit_log.jsonl").read_text().splitlines()]
     assert any(a["type"] == "correction_failed" for a in audits)
+
+
+def test_token_non_ascii_signature_rejected_not_crashed() -> None:
+    token = _issue()
+    body, _ = token.split(".")
+    ok, reason = validate_approval_token(
+        body + ".ññ", case_id="C-1001", field="balance", new_value=1250.00
+    )
+    assert not ok and reason == "malformed token"
+
+
+def test_token_typed_value_mismatch_rejected() -> None:
+    ok, reason = validate_approval_token(
+        _issue(value=1250.00), case_id="C-1001", field="balance", new_value=1250
+    )
+    assert not ok and "value" in reason  # int 1250 != float 1250.0: strictly typed
+
+
+def test_approved_draft_cannot_be_reapproved() -> None:
+    _draft_and_ticket()
+    from orchestrator.human_gate import latest_pending_draft
+
+    first = run_human_gate("case file", latest_pending_draft("C-1001"), GateDecision(GateAction.APPROVE))
+    assert first["action"] is GateAction.APPROVE
+    assert latest_pending_draft("C-1001") is None  # draft left pending-land: stale re-approval impossible
 
 
 def test_executor_apply_failure_surfaces_exact_error(monkeypatch) -> None:

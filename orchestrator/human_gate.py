@@ -101,8 +101,13 @@ def validate_approval_token(
         return False, "malformed token"
     body, signature = token.split(".")
     expected = hmac.new(_token_key(), body.encode(), hashlib.sha256).hexdigest()
-    if not hmac.compare_digest(signature, expected):
-        return False, "invalid signature (forged or altered token)"
+    try:
+        if not hmac.compare_digest(signature, expected):
+            return False, "invalid signature (forged or altered token)"
+    except TypeError:
+        # Non-ASCII signature (audit finding 7): reject as malformed, never
+        # crash the executor out of its own audit path.
+        return False, "malformed token"
     try:
         payload = json.loads(base64.urlsafe_b64decode(body.encode()))
     except (ValueError, json.JSONDecodeError):
@@ -133,10 +138,15 @@ def validate_approval_token(
     return True, "valid"
 
 
-def _audit(entry: dict) -> None:
+def audit_gate_event(entry: dict) -> None:
+    """Append one gate/audit event to the runtime audit log (public: the
+    orchestrator composition uses it for round-exhaustion events)."""
     path = seed_data.runtime_path("audit_log.jsonl")
     with open(path, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry) + "\n")
+
+
+_audit = audit_gate_event
 
 
 def _close_ticket(ticket_id: str, status: str, extra: dict | None = None) -> None:
@@ -169,10 +179,18 @@ def latest_ticket(case_id: str) -> dict | None:
     return ticket
 
 
-def run_human_gate(case_file: str, correction_draft: dict | None, decision: GateDecision) -> dict:
-    """§2.4 pause-point. Every decision is audited. APPROVE issues the
-    scoped token; REJECT closes the ticket as rejected with the human's
-    reason; REQUEST_MORE_INFO returns the note as investigation_hint for
+def run_human_gate(
+    case_file: str,
+    correction_draft: dict | None,
+    decision: GateDecision,
+    case_id: str = "",
+) -> dict:
+    """§2.4 pause-point. Every decision is audited (with the case_id).
+    APPROVE issues the scoped token and marks the draft approved (it can
+    never be re-approved by a later run — audit finding 5); REJECT closes
+    the case's OPEN tickets as rejected with the human's reason (audit
+    finding 4: rejection is case-linked even when no draft exists);
+    REQUEST_MORE_INFO returns the note as investigation_hint for
     re-invoking detector_investigator."""
     at = dt.datetime.now(dt.timezone.utc).isoformat()
     if decision.action is GateAction.APPROVE:
@@ -187,10 +205,13 @@ def run_human_gate(case_file: str, correction_draft: dict | None, decision: Gate
             "type": "gate_approval",
             "at": at,
             "approver": decision.approver,
-            "case_id": correction_draft["customer_id"],
+            "case_id": case_id or correction_draft["customer_id"],
             "field": correction_draft["field"],
             "new_value": correction_draft["proposed_value"],
         })
+        from tools.case_management import update_draft
+
+        update_draft(correction_draft["draft_id"], status="approved", approved_at=at)
         return {"action": GateAction.APPROVE, "approval_token": token, "draft": correction_draft}
 
     if decision.action is GateAction.REJECT:
@@ -198,16 +219,20 @@ def run_human_gate(case_file: str, correction_draft: dict | None, decision: Gate
             "type": "gate_rejection",
             "at": at,
             "approver": decision.approver,
+            "case_id": case_id,
             "reason": decision.reason,
         })
-        customer_id = (correction_draft or {}).get("customer_id", "")
-        ticket = latest_ticket(customer_id) if customer_id else None
-        if ticket:
-            _close_ticket(ticket["ticket_id"], "rejected", {"rejection_reason": decision.reason})
+        closed = 0
+        if case_id:
+            from tools.case_management import update_tickets_for_case
+
+            closed = update_tickets_for_case(
+                case_id, "rejected", rejection_reason=decision.reason
+            )
         return {
             "action": GateAction.REJECT,
             "reason": decision.reason,
-            "ticket_id": ticket["ticket_id"] if ticket else None,
+            "tickets_closed": closed,
         }
 
     # REQUEST_MORE_INFO
@@ -215,6 +240,7 @@ def run_human_gate(case_file: str, correction_draft: dict | None, decision: Gate
         "type": "gate_more_info",
         "at": at,
         "approver": decision.approver,
+        "case_id": case_id,
         "note": decision.note,
     })
     return {"action": GateAction.REQUEST_MORE_INFO, "investigation_hint": decision.note}
