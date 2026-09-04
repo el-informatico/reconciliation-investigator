@@ -29,3 +29,7 @@ __pycache__/
 # (experiment.to_file output); capture a copy into agent-memory/evidence/
 # when a run's numbers matter, do not commit the working copy.
 *_evaluation.json
+
+# Runtime stores (EVAL_MODE=1): drafts, tickets, correction overrides,
+# audit log, consumed tokens — application state, not source.
+runtime/
