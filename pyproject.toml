@@ -20,6 +20,7 @@ version = "0.1.0"
 description = "Reconciliation investigator agent system built on the Strands Agents SDK"
 requires-python = ">=3.13"
 dependencies = [
+    "anthropic==1.3.0",
     "strands-agents==1.54.0",
     "strands-agents-evals==1.2.0",
 ]
@@ -28,3 +29,9 @@ dependencies = [
 dev = [
     "pytest==9.1.1",
 ]
+
+[tool.pytest.ini_options]
+# Virtual uv project: nothing puts the repo root on sys.path by default,
+# so tests importing evals/, tools/, agents/, orchestrator/ need it.
+pythonpath = ["."]
+testpaths = ["tests"]
