@@ -452,7 +452,7 @@ explicit human approval of both categories.
    response; ~20 lines) — turns the next preflight's ±50% estimate into a
    measurement.
 7. **Rollback** — single `git revert` of the swap commit; `.env` key removal
-   optional; Groq wiring recoverable from history (`958a815` lineage).
+   optional; Groq wiring recoverable from history (`82d8271` lineage).
 
 **Cerebras contingent plan (only if the human unblocks billing — outside this
 task's permissions):** `agents/model.py` two-value swap (`base_url=

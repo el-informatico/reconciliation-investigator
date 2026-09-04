@@ -35,6 +35,7 @@ backend seat's `agents|orchestrator|tools|tests` tree.
 | `probe_common.py` | env loader (names only), redactor, HTTP capture, evidence writer |
 | `probe_cerebras.py` | raw REST probe: auth/models, tiny completion, tool call + replay |
 | `probe_gemini.py` | raw REST probe: model list, tiny completion, function call + replay, structured output |
+| `probe_groq.py` | two-key Groq probe (openai-sdk transport): models list, tiny completion, tool round + replay, full `x-ratelimit-*` capture — one `--env-file`/`--env-tag` per sibling project |
 | `probe_strands.py` | the app's exact Strands `OpenAIModel`/`GeminiModel` idiom against each provider, with a synthetic tool loop |
 
 ## Usage (from the repo root)
@@ -42,6 +43,8 @@ backend seat's `agents|orchestrator|tools|tests` tree.
 ```bash
 uv run --locked python probes/probe_cerebras.py
 uv run --locked python probes/probe_gemini.py
+uv run --locked python probes/probe_groq.py --env-file ~/projects/[SIBLING-A]/.env --env-tag [SIBLING-A]
+uv run --locked python probes/probe_groq.py --env-file ~/projects/[SIBLING-B]/.env      --env-tag gateway
 uv run --locked python probes/probe_strands.py --provider cerebras
 uv run --locked python probes/probe_strands.py --provider gemini-compat
 uv run --frozen --with google-genai python probes/probe_strands.py --provider gemini-native
