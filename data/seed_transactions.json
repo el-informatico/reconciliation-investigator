@@ -1,0 +1,95 @@
+{
+  "_comment": "Seed data for the 5 scenarios in evals/cases.py. Tool implementations (tools/*.py) must read from this file when EVAL_MODE=1 instead of hitting any real system. Numbers here match each case's flagged_discrepancy exactly.",
+
+  "legacy_system": {
+    "C-1001": { "CUSTOMER_ID": "C-1001", "BALANCE": 1500.00, "STATUS": "ACTIVE", "LAST_UPDATED": "2026-08-25T22:10:00Z" },
+    "C-1002": { "CUSTOMER_ID": "C-1002", "BALANCE": 980.00, "STATUS": "ACTIVE", "LAST_UPDATED": "2026-08-27T11:00:00Z" },
+    "C-1003": { "CUSTOMER_ID": "C-1003", "BALANCE": 4200.00, "STATUS": "ACTIVE", "LAST_UPDATED": "2026-08-28T23:55:00Z" },
+    "C-1004": { "CUSTOMER_ID": "C-1004", "BALANCE": 2100.00, "STATUS": "SUSPENDED", "LAST_UPDATED": "2026-08-29T08:15:00Z" },
+    "C-1005": { "CUSTOMER_ID": "C-1005", "BALANCE": 305.50, "STATUS": "ACTIVE", "LAST_UPDATED": "2026-08-24T16:20:00Z" }
+  },
+
+  "modern_system": {
+    "C-1001": { "customerId": "C-1001", "balance": 1250.00, "status": "ACTIVE", "lastUpdated": "2026-08-20T09:00:00Z" },
+    "C-1002": { "customerId": "C-1002", "balance": 1160.00, "status": "ACTIVE", "lastUpdated": "2026-08-27T11:05:00Z" },
+    "C-1003": { "customerId": "C-1003", "balance": 4050.00, "status": "ACTIVE", "lastUpdated": "2026-08-28T20:00:00Z" },
+    "C-1004": { "customerId": "C-1004", "balance": 2100.00, "status": "ACTIVE", "lastUpdated": "2026-08-26T09:00:00Z" },
+    "C-1005": { "customerId": "C-1005", "balance": 350.50, "status": "ACTIVE", "lastUpdated": "2026-08-24T16:22:00Z" }
+  },
+
+  "transactions": {
+    "C-1001": {
+      "_comment": "Reversal posted in legacy, never mirrored to modern.",
+      "legacy": [
+        { "transaction_id": "L-TXN-90001", "type": "CHARGE", "amount": -250.00, "timestamp": "2026-08-18T14:32:00Z", "related_transaction_id": null },
+        { "transaction_id": "L-TXN-90002", "type": "REVERSAL", "amount": 250.00, "timestamp": "2026-08-25T22:09:40Z", "related_transaction_id": "L-TXN-90001" }
+      ],
+      "modern": [
+        { "transaction_id": "M-TXN-90001", "type": "CHARGE", "amount": -250.00, "timestamp": "2026-08-18T14:32:05Z", "related_transaction_id": null }
+      ]
+    },
+    "C-1002": {
+      "_comment": "Same deposit processed twice in modern, 32 seconds apart.",
+      "legacy": [
+        { "transaction_id": "L-TXN-90101", "type": "DEPOSIT", "amount": 180.00, "timestamp": "2026-08-27T10:58:12Z", "related_transaction_id": null }
+      ],
+      "modern": [
+        { "transaction_id": "M-TXN-90101", "type": "DEPOSIT", "amount": 180.00, "timestamp": "2026-08-27T10:58:15Z", "related_transaction_id": null },
+        { "transaction_id": "M-TXN-90102", "type": "DEPOSIT", "amount": 180.00, "timestamp": "2026-08-27T10:58:47Z", "related_transaction_id": null }
+      ]
+    },
+    "C-1003": {
+      "_comment": "Deposit posted in legacy, awaiting the nightly batch export to modern.",
+      "legacy": [
+        { "transaction_id": "L-TXN-90201", "type": "DEPOSIT", "amount": 150.00, "timestamp": "2026-08-28T23:50:02Z", "related_transaction_id": null }
+      ],
+      "modern": []
+    },
+    "C-1004": {
+      "_comment": "Status-only discrepancy — no transaction explains it, see event_log instead.",
+      "legacy": [],
+      "modern": []
+    },
+    "C-1005": {
+      "_comment": "Same deposit, transposed digits between systems (50.00 vs 95.00).",
+      "legacy": [
+        { "transaction_id": "L-TXN-90301", "type": "DEPOSIT", "amount": 50.00, "timestamp": "2026-08-24T16:19:40Z", "related_transaction_id": null }
+      ],
+      "modern": [
+        { "transaction_id": "M-TXN-90301", "type": "DEPOSIT", "amount": 95.00, "timestamp": "2026-08-24T16:19:45Z", "related_transaction_id": null }
+      ]
+    }
+  },
+
+  "event_log": {
+    "C-1001": {
+      "legacy": [
+        { "event_id": "EVT-L-40011", "event_type": "REVERSAL_POSTED", "timestamp": "2026-08-25T22:09:41Z", "payload": { "reversed_transaction_id": "L-TXN-90001", "reason": "customer dispute resolved in customer's favor" } }
+      ],
+      "modern": []
+    },
+    "C-1002": {
+      "_comment": "Deliberately empty on both sides — search_transactions alone should already explain this case; get_event_log here would be an unnecessary call.",
+      "legacy": [],
+      "modern": []
+    },
+    "C-1003": {
+      "legacy": [
+        { "event_id": "EVT-L-40031", "event_type": "BATCH_EXPORT_QUEUED", "timestamp": "2026-08-28T23:50:03Z", "payload": { "target": "modern_system", "batch_window": "01:00-02:00Z" } }
+      ],
+      "modern": [
+        { "event_id": "EVT-M-40032", "event_type": "BATCH_SYNC_SCHEDULED", "timestamp": "2026-08-28T23:50:10Z", "payload": { "scheduled_for": "2026-08-29T01:30:00Z", "source": "legacy_system" } }
+      ]
+    },
+    "C-1004": {
+      "legacy": [
+        { "event_id": "EVT-L-40041", "event_type": "MANUAL_STATUS_OVERRIDE", "timestamp": "2026-08-29T08:14:50Z", "payload": { "changed_by": "support_agent_jrivera", "old_status": "ACTIVE", "new_status": "SUSPENDED", "reason": "suspected fraud, pending review" } }
+      ],
+      "modern": []
+    },
+    "C-1005": {
+      "legacy": [],
+      "modern": []
+    }
+  }
+}
