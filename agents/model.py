@@ -12,7 +12,11 @@ from strands.models.anthropic import AnthropicModel
 # Bare model id: the glm-5.3[1m] alias is a client-side-only convention
 # and is rejected by the raw API.
 MODEL_ID = "glm-5.3"
-DEFAULT_MAX_TOKENS = 4096
+# 8192 (raised from 4096, 2026-09-04): the detector's evidence bundle and
+# the reporter's case file blew the 4096 cap live on two eval cases
+# (MaxTokensReachedException — duplicate-transaction, data-entry-error;
+# evidence/evals-sequential-results-2026-09-04.json, label=task-failure).
+DEFAULT_MAX_TOKENS = 8192
 
 
 def get_model(max_tokens: int = DEFAULT_MAX_TOKENS) -> AnthropicModel:
