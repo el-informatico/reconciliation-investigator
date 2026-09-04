@@ -1,0 +1,30 @@
+# reconciliation-investigator — uv project manifest (Ares V2 python-strands profile).
+#
+# This is a VIRTUAL uv project: [project] with deliberately NO
+# [build-system]. The repo is an application run from the repo root
+# (agents/, orchestrator/, tools/, evals/ are plain importable
+# packages), not an installed distribution. Do NOT run `uv init` here —
+# since uv 0.12 it would inject a build system and a src/ layout
+# (docs/gotchas.md §1).
+#
+# Pins are a DATED SNAPSHOT, live-verified 2026-09-04 via
+# https://pypi.org/pypi/<pkg>/json by the aresV2 controlling session;
+# bootstrap re-verifies before first commit (agent-memory/
+# bootstrap-report.md records source+date). verify.sh step 3 reports
+# drift (advisory). Refresh deliberately: bump the pin, run `uv lock`,
+# commit lockfile + pin together.
+
+[project]
+name = "reconciliation-investigator"
+version = "0.1.0"
+description = "Reconciliation investigator agent system built on the Strands Agents SDK"
+requires-python = ">=3.13"
+dependencies = [
+    "strands-agents==1.54.0",
+    "strands-agents-evals==1.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+]

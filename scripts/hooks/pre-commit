@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Pre-commit gate (Ares V2 python-strands profile): refuses a commit
+# whose working tree violates segregation of duties. Wired at bootstrap
+# via:  git config core.hooksPath scripts/hooks
+#
+# Honest limits: `git commit --no-verify` bypasses this hook, and it
+# checks the working tree (not the commit object itself). It is a
+# tripwire, not containment — see
+# scripts/guard-segregation-of-duties.sh for the full boundary note.
+set -u
+ROOT="$(git rev-parse --show-toplevel)" || {
+  echo "pre-commit: cannot determine repo root" >&2
+  exit 1
+}
+exec bash "$ROOT/scripts/guard-segregation-of-duties.sh" "$ROOT"

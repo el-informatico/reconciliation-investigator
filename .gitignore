@@ -1,0 +1,26 @@
+# reconciliation-investigator — .gitignore (Ares V2 python-strands profile)
+#
+# *.log keeps agent-memory/guard-audit.log runtime-only (the project
+# convention; aresV2 itself tracks its own log deliberately — projects
+# do not).
+
+*.log
+
+# environment / secrets
+.env
+.env.*
+!.env.example
+
+# Claude Code local state
+.claude/settings.local.json
+
+# OS noise
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
