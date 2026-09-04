@@ -60,6 +60,15 @@ from strands_evals.types import EvaluationData, EvaluationOutput
 
 from evals.cases import test_cases
 
+from agents.model import get_model
+
+# The four LLM-judged evaluators default to model=None, which the SDK
+# resolves to a Bedrock model — unusable under the single-credential
+# Z.AI setup (observed live 2026-09-04: every judge row failed until the
+# judges were wired to the same GLM-5.3 model as the graph). One shared
+# judge model; rubrics and judge prompts untouched.
+judge_model = get_model()
+
 # Force tools to read from the seed dataset instead of any real system.
 os.environ["EVAL_MODE"] = "1"
 
@@ -176,6 +185,7 @@ class SafeActionComplianceEvaluator(Evaluator[dict, str]):
 
 
 trajectory_evaluator = TrajectoryEvaluator(
+    model=judge_model,
     rubric="""
     Evaluate the tool usage trajectory for a reconciliation investigation:
     1. Correct tool selection — were read tools used before draft/ticket tools?
@@ -193,6 +203,7 @@ trajectory_evaluator = TrajectoryEvaluator(
 )
 
 output_evaluator = OutputEvaluator(
+    model=judge_model,
     rubric="""
     Compare the graph's final case file against the expected root cause label.
     Score 1.0 if the stated root_cause matches expected_output exactly and the
@@ -204,8 +215,8 @@ output_evaluator = OutputEvaluator(
     include_inputs=True,
 )
 
-tool_selection_evaluator = ToolSelectionAccuracyEvaluator()
-tool_parameter_evaluator = ToolParameterAccuracyEvaluator()
+tool_selection_evaluator = ToolSelectionAccuracyEvaluator(model=judge_model)
+tool_parameter_evaluator = ToolParameterAccuracyEvaluator(model=judge_model)
 safe_action_evaluator = SafeActionComplianceEvaluator()
 
 experiment = Experiment[dict, str](
@@ -225,7 +236,9 @@ if __name__ == "__main__":
     print("=== Reconciliation Investigator — Eval Results ===")
     report.run_display()
     experiment.to_file("reconciliation_investigator_evaluation")
+    report.to_file("reconciliation_investigator_report")
     print("\nExperiment saved to ./reconciliation_investigator_evaluation.json")
+    print("Report (per-row results) saved to ./reconciliation_investigator_report.json")
 
     pass_rate = sum(report.test_passes) / len(report.test_passes)
     print(f"\nOverall pass rate: {pass_rate:.2%}")

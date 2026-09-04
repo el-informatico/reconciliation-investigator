@@ -13,11 +13,15 @@ in-graph reporter input carries the classifier's raw output).
 Verified API facts this wiring relies on (2026-09-04, installed source):
 - nodes are Agent instances; add_edge(from, to, condition) with
   conditions returning bool over GraphState;
-- a node is ready when ANY incoming edge condition is satisfied, so the
-  detector->reporter edge deliberately mirrors the classifier->reporter
-  predicate (identical functions cannot diverge) to give the reporter
-  BOTH the evidence bundle and the verdict in its propagated input
-  (input propagation is direct-edges-only);
+- a node is ready when ANY incoming edge condition is satisfied, AND a
+  satisfied condition re-nominates its target on later batch scans —
+  stateless True conditions therefore re-execute nodes (observed live
+  2026-09-04: the reporter ran twice per case until every edge into it
+  gained an execution-state guard). The detector->reporter edge mirrors
+  the classifier->reporter predicate (identical functions cannot
+  diverge) to give the reporter BOTH the evidence bundle and the
+  verdict in its propagated input (input propagation is
+  direct-edges-only);
 - reset_on_revisit defaults to False, so the detector keeps its prior
   conversation (evidence bundle) across cycle rounds — §2.1's "append to
   the existing bundle" depends on this;
@@ -130,6 +134,18 @@ def _cycle_should_continue(state: Any) -> bool:
     )
 
 
+def _reporter_completed(state: Any) -> bool:
+    completed = getattr(state, "completed_nodes", None)
+    if completed is None:
+        # Fabricated test states may carry only execution_order.
+        return REPORTER_NODE in _node_ids(state)
+    return any(getattr(node, "node_id", str(node)) == REPORTER_NODE for node in completed)
+
+
+def _classifier_rounds(state: Any) -> int:
+    return _node_ids(state).count(CLASSIFIER_NODE)
+
+
 def edge_classifier_to_detector(state: Any) -> bool:
     """§1: confidence < 0.7 -> cycle back to detector_investigator
     (the classifier output — carrying investigation_hint — propagates as
@@ -139,15 +155,29 @@ def edge_classifier_to_detector(state: Any) -> bool:
 
 def edge_classifier_to_reporter(state: Any) -> bool:
     """§1: confidence >= 0.7, OR the cycle cap was reached (force-route);
-    an unparseable verdict also routes here rather than looping."""
-    return not _cycle_should_continue(state)
+    an unparseable verdict also routes here rather than looping. Guarded
+    against re-execution: the engine re-nominates a node whenever an
+    incoming edge condition is satisfied on a later batch scan, so a
+    stateless True here ran the reporter TWICE per case in the first
+    real eval run (two tickets per case — caught by the SDK's tool
+    judges 2026-09-04). Once the reporter has completed, no edge into it
+    may fire again."""
+    return not _cycle_should_continue(state) and not _reporter_completed(state)
 
 
 def edge_detector_to_reporter(state: Any) -> bool:
     """Mirror of edge_classifier_to_reporter: exists only so the
     reporter's propagated input includes the evidence bundle (input
-    propagation is direct-edges-only in the installed API)."""
+    propagation is direct-edges-only in the installed API). Same
+    re-execution guard."""
     return edge_classifier_to_reporter(state)
+
+
+def edge_detector_to_classifier(state: Any) -> bool:
+    """Advance to the classifier only while cycle budget remains: the
+    unconditional form re-nominated the classifier on later batch scans
+    after the final verdict, wasting a model call past the cap."""
+    return _classifier_rounds(state) < MAX_INVESTIGATION_ROUNDS
 
 
 def build_reconciliation_graph(trace_attributes: dict | None = None) -> Graph:
@@ -162,7 +192,7 @@ def build_reconciliation_graph(trace_attributes: dict | None = None) -> Graph:
     builder.add_node(build_classifier(trace_attributes=trace_attributes), node_id=CLASSIFIER_NODE)
     builder.add_node(build_reporter(trace_attributes=trace_attributes), node_id=REPORTER_NODE)
 
-    builder.add_edge(DETECTOR_NODE, CLASSIFIER_NODE)
+    builder.add_edge(DETECTOR_NODE, CLASSIFIER_NODE, condition=edge_detector_to_classifier)
     builder.add_edge(CLASSIFIER_NODE, DETECTOR_NODE, condition=edge_classifier_to_detector)
     builder.add_edge(CLASSIFIER_NODE, REPORTER_NODE, condition=edge_classifier_to_reporter)
     builder.add_edge(DETECTOR_NODE, REPORTER_NODE, condition=edge_detector_to_reporter)
