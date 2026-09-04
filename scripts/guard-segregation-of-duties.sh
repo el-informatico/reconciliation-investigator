@@ -36,7 +36,16 @@
 #     exec, or string-assembled names all evade it.
 #   - It sees only *.py files under the scanned tree (skips .git/,
 #     .venv/, node_modules/); generated code and other file types are
-#     invisible to it.
+#     invisible to it. Symlinked .py files ARE followed; unreadable
+#     directories are skipped with a find warning while the guard still
+#     exits 0.
+#   - Over-blocking, concretely: any ONE line pairing the words trips
+#     it even outside construction syntax — e.g. a status log line
+#     like  log.info(f"Agent (investigation) done; apply_correction
+#     deferred"). Deliberate (D-19 class): reword the message, do not
+#     add an exception path. A path containing the literal ':<digits>:'
+#     before the word could alias the anchor — accepted next to the
+#     alternative of flagging every apply_correction-named file.
 #   - The pre-commit wiring is bypassable (--no-verify), and anyone who
 #     can edit scripts/ can drop the verify step — but scripts/** is
 #     outside every project seat's ownership and changes there are Tier
@@ -59,14 +68,18 @@ if [ ! -d "$TARGET" ]; then
   exit 2
 fi
 
-# grep -nE finds Agent-construction lines; grep -F keeps only those also
-# carrying apply_correction. /dev/null forces file:line: prefixes even
-# when a single file matches; xargs -r copes with zero .py files.
-VIOL="$(find "$TARGET" -type f -name '*.py' \
+# grep -anE finds Agent-construction lines (-a: files grep would class
+# as binary, e.g. NUL-containing UTF-16 artifacts, are still scanned);
+# the ':<digits>:' anchor keeps the second stage on the line CONTENT —
+# a file merely NAMED apply_correction.py must not trip on its own
+# path prefix. /dev/null forces file:line: prefixes even when a single
+# file matches; xargs -r copes with zero .py files; -type l follows
+# symlinked .py files (security review 2026-09-04, findings 2/3/5).
+VIOL="$(find "$TARGET" \( -type f -o -type l \) -name '*.py' \
   -not -path '*/.git/*' -not -path '*/.venv/*' -not -path '*/node_modules/*' \
   -print0 \
-  | xargs -0 -r grep -nE 'Agent[[:space:]]*\(' -- /dev/null \
-  | grep -F 'apply_correction' || true)"
+  | xargs -0 -r grep -anE 'Agent[[:space:]]*\(' -- /dev/null \
+  | grep -E ':[0-9]+:.*apply_correction' || true)"
 
 if [ -n "$VIOL" ]; then
   HITS="$(printf '%s\n' "$VIOL" | wc -l)"

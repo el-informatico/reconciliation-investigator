@@ -13,7 +13,9 @@
 #                      manual-install instructions; NEVER auto-installed)
 #   2 segregation    — scripts/guard-segregation-of-duties.sh over the
 #                      repo (apply_correction must never construct an
-#                      Agent on one line)
+#                      Agent on one line) + pre-commit wiring check
+#                      (core.hooksPath + exec bit: git silently ignores
+#                      a non-executable hook)
 #   3 pypi-freshness — ADVISORY: pinned (pyproject.toml) vs live latest
 #                      (pypi.org/pypi/<pkg>/json); PASS either way,
 #                      prints REFRESH-RECOMMENDED on drift, WARNs (never
@@ -60,24 +62,35 @@ else
   echo "[verify] PASS  step 1 preflight — $(uv --version 2>/dev/null | head -1); $(python3 --version 2>&1); $(git --version 2>/dev/null)"
 fi
 
-# --- step 2: segregation of duties -----------------------------------------
+# --- step 2: segregation of duties (+ pre-commit wiring) -------------------
 echo
 echo "[verify] === step 2: segregation-of-duties guard ==="
-if bash "$ROOT/scripts/guard-segregation-of-duties.sh" "$ROOT"; then
-  PASS=$((PASS + 1))
-  echo "[verify] PASS  step 2 segregation guard — no Agent(...)+apply_correction line"
-else
+if [ ! -f "$ROOT/scripts/guard-segregation-of-duties.sh" ]; then
+  FAIL=$((FAIL + 1))
+  echo "[verify] FAIL  step 2 segregation guard — scripts/guard-segregation-of-duties.sh is MISSING (wiring defect; scripts/** is controlling-session territory)"
+elif ! bash "$ROOT/scripts/guard-segregation-of-duties.sh" "$ROOT"; then
   FAIL=$((FAIL + 1))
   echo "[verify] FAIL  step 2 segregation guard — see the BLOCKED lines above (investigation and correction must stay separate)"
+else
+  PASS=$((PASS + 1))
+  echo "[verify] PASS  step 2 segregation guard — no Agent(...)+apply_correction line"
+  hookpath="$(git -C "$ROOT" config core.hooksPath 2>/dev/null || true)"
+  if [ "$hookpath" = "scripts/hooks" ] && [ -x "$ROOT/scripts/hooks/pre-commit" ]; then
+    echo "[verify]        pre-commit wiring OK (core.hooksPath=scripts/hooks, hook executable)"
+  else
+    FAIL=$((FAIL + 1))
+    echo "[verify] FAIL  step 2 pre-commit wiring — core.hooksPath='$hookpath' (want scripts/hooks) or scripts/hooks/pre-commit lacks the exec bit; git SILENTLY IGNORES a non-executable hook"
+  fi
 fi
 
 # --- step 3: PyPI freshness (advisory) --------------------------------------
 echo
 echo "[verify] === step 3: pypi freshness (advisory) ==="
-python3 - "$ROOT/pyproject.toml" <<'PY'
+if python3 - "$ROOT/pyproject.toml" <<'PY'
 # Advisory freshness report: pinned vs live-latest per dependency.
-# ALWAYS exits 0 — staleness is a recommendation, not a failure, and a
-# network outage must not fail verify (but must never be silent).
+# Exits 0 even on warn-able conditions (staleness is a recommendation,
+# not a failure; a network outage must not fail verify — but must never
+# be silent). A non-zero exit here means python3 itself failed.
 import json
 import sys
 import urllib.request
@@ -88,9 +101,10 @@ try:
         doc = tomllib.load(f)
     pins = {}
     for dep in doc.get("project", {}).get("dependencies", []):
-        name, _, spec = dep.partition("==")
+        base = dep.split(";")[0].strip()          # drop env markers
+        name, _, spec = base.partition("==")
         if spec:
-            pins[name.strip()] = spec.strip()
+            pins[name.strip().split("[")[0]] = spec.strip().split()[0]
 except Exception as exc:  # unparsable pins: warn, do not fail
     print(f"  WARN: could not parse pyproject pins ({exc!r}) — freshness check skipped")
     sys.exit(0)
@@ -104,8 +118,14 @@ for name, pinned in sorted(pins.items()):
     except Exception as exc:
         print(f"  WARN: pypi lookup failed for {name} ({exc!r})")
 PY
-PASS=$((PASS + 1))
-echo "[verify] PASS  step 3 pypi freshness — advisory, see table above"
+then
+  PASS=$((PASS + 1))
+  echo "[verify] PASS  step 3 pypi freshness — advisory, see table above"
+else
+  rc=$?
+  FAIL=$((FAIL + 1))
+  echo "[verify] FAIL  step 3 pypi freshness — python3 failed (exit $rc); the advisory report could not run at all"
+fi
 
 # --- step 4: uv sync --------------------------------------------------------
 echo
