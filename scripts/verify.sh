@@ -157,10 +157,19 @@ fi
 # --- step 6: evals ----------------------------------------------------------
 echo
 echo "[verify] === step 6: evals (EVAL_MODE=1) ==="
+# PYTHONPATH=$ROOT: `python evals/run_evals.py` puts the SCRIPT's dir on
+# sys.path, not the repo root — in this virtual project nothing else adds
+# the root, so the runner's absolute imports (evals.cases, and later
+# orchestrator.*, tools.*) need it explicitly. stdin feeds 'q':
+# report.run_display() opens an INTERACTIVE rich prompt (expand cases /
+# q to quit); under a non-tty it would EOFError and fail the step. The
+# pass rate inside the report is the application's own score — this
+# step proves the HARNESS runs; per-project criteria may assert on the
+# rate when implementation lands.
 if [ ! -f "$ROOT/evals/run_evals.py" ]; then
   FAIL=$((FAIL + 1))
   echo "[verify] FAIL  step 6 evals — evals/run_evals.py not present (application spec files not yet placed; expected at evals/cases.py, evals/run_evals.py, data/seed_transactions.json)"
-elif (cd "$ROOT" && EVAL_MODE=1 uv run --locked python evals/run_evals.py); then
+elif (cd "$ROOT" && printf 'q\n' | EVAL_MODE=1 PYTHONPATH="$ROOT" uv run --locked python evals/run_evals.py); then
   PASS=$((PASS + 1))
   echo "[verify] PASS  step 6 evals (EVAL_MODE=1)"
 else

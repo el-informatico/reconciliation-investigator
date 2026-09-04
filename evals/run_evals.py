@@ -3,7 +3,7 @@ Eval runner for Reconciliation Investigator.
 
 Wires the 5 cases in evals/cases.py against the actual Strands Graph and
 scores:
-  - TrajectoryEvaluator / ToolSelectionEvaluator / ToolParameterEvaluator:
+  - TrajectoryEvaluator / ToolSelectionAccuracyEvaluator / ToolParameterAccuracyEvaluator:
     did the graph call the right tools, with the right parameters, in a
     sensible order?
   - OutputEvaluator: did the classifier reach the correct root cause, with
@@ -44,8 +44,8 @@ from strands_evals import Case, Experiment
 from strands_evals.evaluators import (
     Evaluator,
     OutputEvaluator,
-    ToolParameterEvaluator,
-    ToolSelectionEvaluator,
+    ToolParameterAccuracyEvaluator,
+    ToolSelectionAccuracyEvaluator,
     TrajectoryEvaluator,
 )
 from strands_evals.mappers import StrandsInMemorySessionMapper
@@ -168,8 +168,8 @@ output_evaluator = OutputEvaluator(
     include_inputs=True,
 )
 
-tool_selection_evaluator = ToolSelectionEvaluator()
-tool_parameter_evaluator = ToolParameterEvaluator()
+tool_selection_evaluator = ToolSelectionAccuracyEvaluator()
+tool_parameter_evaluator = ToolParameterAccuracyEvaluator()
 safe_action_evaluator = SafeActionComplianceEvaluator()
 
 experiment = Experiment[dict, str](
