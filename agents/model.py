@@ -64,8 +64,12 @@ def get_model(max_tokens: int = DEFAULT_MAX_TOKENS) -> OpenAIModel:
             "it is restricted to Claude Code by the subscription's "
             "permitted-use policy (human ruling, 2026-09-04)."
         )
+    # NOTE: OpenAIModel takes max_tokens inside `params` — as a top-level
+    # kwarg it is silently ignored with a UserWarning (verified live
+    # 2026-09-04; the warning names the valid set: cache_config,
+    # context_window_limit, model_id, params, stream).
     return OpenAIModel(
         client_args={"base_url": GROQ_BASE_URL, "api_key": api_key},
         model_id=MODEL_ID,
-        max_tokens=max_tokens,
+        params={"max_tokens": max_tokens},
     )

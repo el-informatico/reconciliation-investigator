@@ -55,4 +55,7 @@ def test_get_model_constructs_groq_provider_with_key(tmp_path, monkeypatch):
     built = get_model()
     assert type(built).__name__ == "OpenAIModel"
     assert built.config.get("model_id") == model_module.MODEL_ID == "openai/gpt-oss-120b"
+    # max_tokens must ride inside params (top-level kwarg is ignored with
+    # a UserWarning — verified live 2026-09-04).
+    assert built.config.get("params") == {"max_tokens": model_module.DEFAULT_MAX_TOKENS}
     assert model_module.GROQ_BASE_URL == "https://api.groq.com/openai/v1"
