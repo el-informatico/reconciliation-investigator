@@ -5,6 +5,7 @@ write access to either system; no tool that applies anything)."""
 from strands import Agent
 
 from agents.model import get_model
+from agents.retry import GroqParsingFailedRetryStrategy
 from tools.case_management import create_case_ticket, draft_correction
 
 REPORTER_SYSTEM_PROMPT = """You are the Reporter for a financial reconciliation system. You receive the
@@ -37,4 +38,5 @@ def build_reporter(model=None, trace_attributes=None) -> Agent:
         tools=[draft_correction, create_case_ticket],
         callback_handler=None,
         trace_attributes=trace_attributes,
+        retry_strategy=GroqParsingFailedRetryStrategy(),
     )

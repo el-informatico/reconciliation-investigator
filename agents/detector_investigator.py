@@ -5,6 +5,7 @@ tools are exactly the four read-only tools."""
 from strands import Agent
 
 from agents.model import get_model
+from agents.retry import GroqParsingFailedRetryStrategy
 from tools.legacy_system import read_legacy_system
 from tools.modern_system import read_modern_system
 from tools.transactions import get_event_log, search_transactions
@@ -52,4 +53,5 @@ def build_detector_investigator(model=None, trace_attributes=None) -> Agent:
         ],
         callback_handler=None,
         trace_attributes=trace_attributes,
+        retry_strategy=GroqParsingFailedRetryStrategy(),
     )

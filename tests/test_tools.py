@@ -121,6 +121,41 @@ def test_draft_and_ticket_write_only_to_runtime_store() -> None:
     assert not (seed_data.RUNTIME_DIR / "overrides.json").exists()
 
 
+def test_create_case_ticket_schema_allows_null_correction_draft_id() -> None:
+    """Regression (2026-09-04 Groq rejections): correction_draft_id was
+    untyped, so normalize_tool_spec stamped {type: string} onto it and the
+    provider rejected contract-correct null emissions ("expected string,
+    but got null"), killing the reporter node. The wire schema must keep
+    the parameter REQUIRED yet NULLABLE, and the tool must accept both
+    None and a real draft id (contract: str | null, docs/build-contract.md)."""
+    import copy
+
+    from strands.tools.tools import normalize_tool_spec
+
+    # RAW = decorator output; WIRE = post-normalization form OpenAIModel
+    # actually sends (normalize_tool_spec mutates nested dicts — deepcopy).
+    raw_spec = copy.deepcopy(create_case_ticket.tool_spec)
+    wire_spec = normalize_tool_spec(copy.deepcopy(create_case_ticket.tool_spec))
+    for spec in (raw_spec, wire_spec):
+        schema = spec["inputSchema"]["json"]
+        assert "correction_draft_id" in schema["required"]
+        prop = schema["properties"]["correction_draft_id"]
+        assert {"type": "string"} in prop["anyOf"]
+        assert {"type": "null"} in prop["anyOf"]
+
+    # End-to-end at the function boundary (the Pydantic input model): both
+    # null and a real draft id validate and are recorded verbatim.
+    t_none = create_case_ticket("C-1003", "s", "SYNC_LAG", 0.9, ["L-TXN-1"], None)
+    t_str = create_case_ticket("C-1003", "s", "DUPLICATE_TRANSACTION", 0.9, ["L-TXN-2"], "DRF-abc123def456")
+    assert t_none["ticket_id"].startswith("TCK-")
+    assert t_str["ticket_id"].startswith("TCK-")
+    tickets = [
+        json.loads(line)
+        for line in (seed_data.RUNTIME_DIR / "tickets.jsonl").read_text().splitlines()
+    ]
+    assert [t["correction_draft_id"] for t in tickets] == [None, "DRF-abc123def456"]
+
+
 def test_apply_correction_is_a_plain_function_never_a_strands_tool() -> None:
     # AC2/§4: if this ever becomes a DecoratedFunctionTool, the guard's
     # grep could pass while the tool is nonetheless registrable — fail here.

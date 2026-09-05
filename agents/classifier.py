@@ -4,6 +4,7 @@
 from strands import Agent
 
 from agents.model import get_model
+from agents.retry import GroqParsingFailedRetryStrategy
 
 CLASSIFIER_SYSTEM_PROMPT = """You are the Root Cause Classifier for a financial reconciliation system.
 You receive an evidence bundle (system records, transactions, event log
@@ -40,4 +41,5 @@ def build_classifier(model=None, trace_attributes=None) -> Agent:
         tools=None,
         callback_handler=None,
         trace_attributes=trace_attributes,
+        retry_strategy=GroqParsingFailedRetryStrategy(),
     )

@@ -111,7 +111,7 @@ def draft_correction(customer_id: str, field: str, current_value, proposed_value
 
 
 @tool
-def create_case_ticket(case_id: str, summary: str, root_cause: str, confidence: float, evidence_refs: list[str], correction_draft_id) -> dict:
+def create_case_ticket(case_id: str, summary: str, root_cause: str, confidence: float, evidence_refs: list[str], correction_draft_id: str | None) -> dict:
     """Create a tracking ticket for an investigation (always called, correction or not).
 
     Args:
