@@ -36,6 +36,12 @@
   API calls — the board's original basis budgeted calls; the value is
   applied as a session cap because that is what a launcher can observe.
 
+- Commit messages and code comments/docstrings carry no AI-tool
+  attribution (no `Co-Authored-By:` AI trailers, no "Generated with"
+  credits, no emoji signatures); subject-matter mentions of AI tools
+  (e.g. the credential policy) are fine. Canonical rule and rationale:
+  CONTRIBUTING.md; mechanical gate: `scripts/hooks/commit-msg`.
+
 ## Language Policy
 
 All output from Claude Code in this repository must be in English:

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Commit-message gate (added 2026-09-06, D-2026-09-06-01): rejects
+# AI-tool ATTRIBUTION in commit messages — the trailer class the
+# 2026-09-05 stage-2 history rewrite removed and that regressed once
+# (the pre-push amend of the human-gate commit, 2026-09-06 audit).
+# Wired like pre-commit via: git config core.hooksPath scripts/hooks
+# (git silently ignores a non-executable hook — keep the exec bit;
+# verify.sh step 2 checks pre-commit's bit only, not this one's).
+#
+# Honest limits: `git commit --no-verify` bypasses it, and it checks
+# only the message file handed to it. It blocks attribution SHAPES,
+# not subject-matter mentions: a subject like "remove the Anthropic
+# path" and a human Co-Authored-By trailer must keep passing.
+# Rule text and rationale: CONTRIBUTING.md at the repo root.
+
+set -u
+MSG_FILE="${1:-}"
+[ -f "$MSG_FILE" ] || exit 0
+
+VENDOR='(claude|anthropic|chatgpt|openai|copilot|gemini|gpt|llm|ai[- ]assistant)'
+
+if grep -inE "^[[:space:]]*co-authored-by:.*${VENDOR}" "$MSG_FILE" \
+   || grep -inE "(generated|written|authored|assisted)[[:space:]]+(with|by)[[:space:]]+[^.]*${VENDOR}" "$MSG_FILE" \
+   || grep -q '🤖' "$MSG_FILE"; then
+  echo "commit-msg: BLOCKED — AI-tool attribution detected in the commit message." >&2
+  echo "  This history was deliberately cleaned of such trailers (stage 2," >&2
+  echo "  2026-09-05). Rule: CONTRIBUTING.md. Remove the attribution line(s)" >&2
+  echo "  and re-commit; do not use --no-verify." >&2
+  exit 1
+fi
+exit 0
