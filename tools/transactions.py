@@ -2,7 +2,7 @@
 
 from strands import tool
 
-from tools.seed_data import load_seed, require_eval_mode
+from tools.seed_data import load_seed, require_eval_mode, strip_seed_annotations
 
 _SYSTEMS = ("legacy", "modern")
 
@@ -29,11 +29,11 @@ def search_transactions(customer_id: str, system: str, date_from: str, date_to: 
     if per_customer is None:
         raise ValueError(f"unknown customer_id {customer_id!r}")
     rows = per_customer.get(system, [])
-    return [
+    return strip_seed_annotations([
         dict(row)
         for row in rows
         if str(date_from) <= row["timestamp"] <= str(date_to)
-    ]
+    ])
 
 
 @tool
@@ -49,4 +49,4 @@ def get_event_log(entity_id: str, system: str) -> list[dict]:
     per_entity = load_seed()["event_log"].get(entity_id)
     if per_entity is None:
         raise ValueError(f"unknown entity_id {entity_id!r}")
-    return [dict(row) for row in per_entity.get(system, [])]
+    return strip_seed_annotations([dict(row) for row in per_entity.get(system, [])])

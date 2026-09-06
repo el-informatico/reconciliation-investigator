@@ -2,7 +2,7 @@
 
 from strands import tool
 
-from tools.seed_data import load_seed, require_eval_mode
+from tools.seed_data import load_seed, require_eval_mode, strip_seed_annotations
 
 
 @tool
@@ -18,4 +18,4 @@ def read_legacy_system(customer_id: str) -> dict:
     record = load_seed()["legacy_system"].get(customer_id)
     if record is None:
         raise ValueError(f"unknown customer_id {customer_id!r} in legacy system")
-    return dict(record)
+    return strip_seed_annotations(record)

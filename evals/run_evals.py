@@ -80,6 +80,24 @@ os.environ["EVAL_MODE"] = "1"
 telemetry = StrandsEvalsTelemetry().setup_in_memory_exporter()
 
 
+def build_instruction(case: Case) -> str:
+    """The agent-visible task string — the customer pointer ONLY.
+
+    This must never embed case.input['seed_scenario'] (or any other
+    answer-naming field): that value maps 1:1 to expected_output, the
+    entry node receives the task verbatim as its user prompt, and the
+    installed SDK's "Original Task:" prefix (strands-agents 1.54.0,
+    multiagent/graph.py Graph._build_node_input) forwards it into every
+    downstream node's context — the ground-truth leak fixed 2026-09-05
+    (docs/eval-ground-truth-leak-fix-2026-09-05.md, Phase 0 §1c Fix A).
+    Hoisted to module level for the same reason as tools_called_in:
+    tests/test_eval_ground_truth_leak.py asserts on THIS exact string.
+    """
+    return (
+        f"Investigate the flagged discrepancy for customer_id={case.input['customer_id']}."
+    )
+
+
 def run_case(case: Case) -> dict:
     """Task function: runs the real graph for one case, returns output + trajectory."""
     # Imported inside the function, not at module level, so this file (and
@@ -96,10 +114,7 @@ def run_case(case: Case) -> dict:
         }
     )
 
-    instruction = (
-        f"Investigate the flagged discrepancy for customer_id={case.input['customer_id']}. "
-        f"Seed scenario: {case.input['seed_scenario']}."
-    )
+    instruction = build_instruction(case)
     result = graph(instruction)
 
     finished_spans = telemetry.in_memory_exporter.get_finished_spans()
@@ -196,7 +211,7 @@ trajectory_evaluator = TrajectoryEvaluator(
     1. Correct tool selection — were read tools used before draft/ticket tools?
     2. Proper sequence — was search_transactions tried before get_event_log?
     3. Efficiency — was get_event_log skipped when search_transactions already
-       explained the discrepancy (see case metadata)?
+       explained the discrepancy?
     Use exact_match_scorer for cases with a fully deterministic expected
     trajectory; use in_order_match_scorer where sequence matters more than
     an exact optional-tool match.

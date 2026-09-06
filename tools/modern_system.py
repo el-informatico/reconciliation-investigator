@@ -23,6 +23,7 @@ from tools.seed_data import (
     effective_modern_record,
     normalize_field,
     require_eval_mode,
+    strip_seed_annotations,
     write_override,
 )
 
@@ -38,7 +39,7 @@ def read_modern_system(customer_id: str) -> dict:
         customer_id: customer identifier, e.g. C-1001
     """
     require_eval_mode()
-    return effective_modern_record(customer_id)
+    return strip_seed_annotations(effective_modern_record(customer_id))
 
 
 def apply_correction(customer_id: str, field: str, new_value, approval_token: str) -> dict:

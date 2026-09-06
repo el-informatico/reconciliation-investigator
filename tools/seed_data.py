@@ -166,3 +166,28 @@ def effective_modern_record(customer_id: str) -> dict:
             last_updated = stamp
     record["lastUpdated"] = last_updated
     return record
+
+
+def strip_seed_annotations(obj):
+    """Recursively copy obj with every '_'-prefixed dict key removed.
+
+    Seed-file annotation keys (_comment today, any _-prefixed author
+    note later) are provenance for humans, never evidence for agents.
+    Every read tool routes its return through this, so an annotation
+    placed inside a record or row can never reach agent context,
+    whatever the seed file looks like — previously clean returns were
+    an accident of key placement, not an enforced invariant (audit
+    §2.5 fragility caveat; fix doc Phase 0 §1c Fix B). Returns a new
+    structure; the lru_cache'd seed is never mutated. No legitimate
+    field in data/seed_transactions.json starts with '_' (pinned by
+    tests/test_eval_ground_truth_leak.py).
+    """
+    if isinstance(obj, dict):
+        return {
+            key: strip_seed_annotations(value)
+            for key, value in obj.items()
+            if not str(key).startswith("_")
+        }
+    if isinstance(obj, list):
+        return [strip_seed_annotations(item) for item in obj]
+    return obj
