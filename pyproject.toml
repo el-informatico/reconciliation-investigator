@@ -18,6 +18,10 @@
 name = "reconciliation-investigator"
 version = "0.1.0"
 description = "Reconciliation investigator agent system built on the Strands Agents SDK"
+# PEP 639 SPDX expression — matches the LICENSE file. Bare-string form,
+# not the legacy {text=...} table: this is a virtual project with no
+# build backend, so uv (>=0.12 here) is the only metadata consumer.
+license = "Apache-2.0"
 requires-python = ">=3.13"
 dependencies = [
     "openai==3.8.0",
