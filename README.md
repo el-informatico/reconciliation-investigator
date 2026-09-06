@@ -81,7 +81,7 @@ flowchart TB
     HG -->|"one-time capability token"| EX
     HG -.->|"request more info: fresh investigation<br/>(bounded, 5 human rounds)"| AG
 
-    NOTE["NO PATH EXISTS from any LLM agent<br/>to apply_correction: it is never registered<br/>in any agent's tools list — mechanically enforced<br/>by scripts/guard-segregation-of-duties.sh<br/>(verify.sh step 2 + git pre-commit)"]
+    NOTE["NO PATH EXISTS from any LLM agent<br/>to apply_correction: it is never registered<br/>in any agent's tools list — enforced by tool<br/>registration (sole caller: correction_executor,<br/>behind the human gate); the grep guard<br/>scripts/guard-segregation-of-duties.sh adds a<br/>weaker same-line tripwire (verify.sh step 2 +<br/>git pre-commit)"]
     NOTE ~~~ EX
 
     classDef ag fill:#E8F0FE,stroke:#1A73E8,color:#202124
@@ -121,10 +121,16 @@ instruction — see section 4 of the build contract.
 - **Agents:** Groq `openai/gpt-oss-120b` via the Strands `OpenAIModel`
   (OpenAI-compatible endpoint, `agents/model.py`) — one shared model for the
   detector, classifier, and reporter. Requires `GROQ_API_KEY`.
-- **Judges (evaluation only):** native Strands `GeminiModel`
-  (`gemini-3.1-flash-lite`) for the four LLM-judged eval dimensions, kept on
-  a separate provider and key from the agents; the fifth evaluator
-  (safe-action compliance) is deterministic. Requires `GEMINI_API_KEY`.
+- **Judges (evaluation only):** by default the four LLM-judged eval
+  dimensions run on the SAME shared Groq model as the agents — the base
+  harness (`evals/run_evals.py`, which `verify.sh` step 6 runs) wires
+  every judge through `agents/model.py`; the fifth evaluator (safe-action
+  compliance) is deterministic. The Groq-agents/Gemini-judges split the
+  canonical 5-case reports used is NOT the default: it requires the
+  explicit driver `evals/gemini_judge_5case` (see Running), which swaps
+  the four judges to native Strands `GeminiModel`
+  (`gemini-3.1-flash-lite`) on a separate provider and key
+  (`GEMINI_API_KEY`) while leaving the agents on Groq.
 - **Resilience:** [`agents/retry.py`](agents/retry.py) adds a narrow, bounded
   retry for exactly one provider failure signature — Groq's in-stream
   `Parsing failed` rejection — and deliberately leaves the stock
@@ -197,7 +203,7 @@ reconciliation-investigator/
 │   ├── DEVPOST-DRAFT.md         # submission description draft
 │   └── … dated validation / audit reports
 ├── deploy/                      # README-only placeholder (AgentCore, deferred)
-└── runtime/                     # gitignored gate state: audit log, consumed tokens
+└── runtime/                     # gitignored stores: drafts.jsonl · tickets.jsonl · overrides.json · audit_log.jsonl · consumed_tokens.jsonl · rejected_calls.jsonl
 ```
 
 ## Running

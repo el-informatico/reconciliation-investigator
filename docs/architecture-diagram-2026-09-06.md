@@ -65,7 +65,7 @@ flowchart TB
     HG -->|"one-time capability token"| EX
     HG -.->|"request more info: fresh investigation<br/>(bounded, 5 human rounds)"| AG
 
-    NOTE["NO PATH EXISTS from any LLM agent<br/>to apply_correction: it is never registered<br/>in any agent's tools list — mechanically enforced<br/>by scripts/guard-segregation-of-duties.sh<br/>(verify.sh step 2 + git pre-commit)"]
+    NOTE["NO PATH EXISTS from any LLM agent<br/>to apply_correction: it is never registered<br/>in any agent's tools list — enforced by tool<br/>registration (sole caller: correction_executor,<br/>behind the human gate); the grep guard<br/>scripts/guard-segregation-of-duties.sh adds a<br/>weaker same-line tripwire (verify.sh step 2 +<br/>git pre-commit)"]
     NOTE ~~~ EX
 
     classDef ag fill:#E8F0FE,stroke:#1A73E8,color:#202124
@@ -118,7 +118,7 @@ provenance section below.
 | REQUEST_MORE_INFO as a bounded re-invocation | `orchestrator/graph.py:288` (`MAX_HUMAN_ROUNDS = 5`), `:352-358` (note re-enters as `investigation_hint`) |
 | Groq runtime provider | `agents/model.py:29-31` (`openai/gpt-oss-120b` over the Groq OpenAI-compatible endpoint) |
 | Gemini eval-only judges | `evals/gemini_judge_canary.py:62-63` (`gemini-3.1-flash-lite`); no Gemini code in `agents/`, `orchestrator/`, `tools/`, `approval/` |
-| No-LLM-path note (mechanical enforcement) | `scripts/guard-segregation-of-duties.sh` (verify.sh step 2 + `scripts/hooks/pre-commit`) |
+| No-LLM-path note (structural enforcement + guard tripwire) | Primary: tool registration — `apply_correction` is a plain function (`tools/modern_system.py:45`), never in any `Agent(...)` tools list (`agents/detector_investigator.py:48-53`, `agents/classifier.py:41`, `agents/reporter.py:38`); sole non-test caller `orchestrator/correction_executor.py:20`, behind the human gate; pinned by `tests/test_agents.py:45-64`, `tests/test_tools.py:166-171`, `evals/cases.py:161-167`. Weakest additional layer: `scripts/guard-segregation-of-duties.sh` (verify.sh step 2 + `scripts/hooks/pre-commit`) — same-line grep tripwire, not containment |
 
 ## Design notes
 
