@@ -71,15 +71,21 @@ instruction — see section 4 of the build contract.
 
 ## Scoping decisions (explicit, not silent omissions)
 
-Per build-contract §2.4, the human approval gate ships in this pass as
-an **orchestrator-level programmatic interface**
-(`orchestrator/human_gate.py` + `orchestrator/correction_executor.py`):
-a single-case decision flow with signed, case-scoped, single-use
-approval tokens and a full audit trail. The single-case approval
-**screen** (UI) is deferred to the next build pass, as are multi-case
-queue management, authentication, and audit search — all explicitly out
-of scope for the demo per §2.4. AWS Bedrock AgentCore deployment
-(`deploy/`) remains a documented placeholder in this pass.
+Per build-contract §2.4, the human approval gate is an
+**orchestrator-level programmatic interface**
+(`orchestrator/human_gate.py` + `orchestrator/correction_executor.py`)
+with a **minimal human-facing surface** on top (the `approval/` package,
+2026-09-05 pass): a single-case decision flow with signed (HMAC-SHA256),
+case-scoped, expiring (10-minute default TTL), single-use approval
+tokens and a full audit trail. The surface is a terminal flow
+(`python -m approval.cli`) plus a loopback-only browser screen
+(`python -m approval.web`) — both render the case + proposed correction
+and turn an APPROVE/REJECT into a `GateDecision` for the deterministic
+gate; neither holds any authority of its own. Still explicitly out of
+scope for the demo per §2.4 (a scoping decision, not a silent omission):
+authentication for the approver, multi-case queue management, and audit
+search. AWS Bedrock AgentCore deployment (`deploy/`) remains a
+documented placeholder in this pass.
 
 ## Repo structure
 
@@ -96,9 +102,12 @@ reconciliation-investigator/
 │   ├── classifier.py            # no tools — pure reasoning
 │   └── reporter.py              # draft_correction, create_case_ticket
 ├── orchestrator/
-│   ├── graph.py                 # Strands Graph wiring, cycle + safety limits
-│   ├── human_gate.py            # approval pause-point + token issuance
+│   ├── graph.py                 # Strands Graph wiring + run_case_with_gate
+│   ├── human_gate.py            # approval decisions + HMAC capability tokens
 │   └── correction_executor.py   # the only caller of apply_correction
+├── approval/                    # minimal human-facing surface (§2.4)
+│   ├── cli.py                   # terminal approval flow + capability demo
+│   └── web.py                   # loopback single-case approval screen
 ├── tools/
 │   ├── seed_data.py             # frozen seed + read-your-writes overlay (EVAL_MODE)
 │   ├── legacy_system.py         # read_legacy_system
@@ -107,8 +116,6 @@ reconciliation-investigator/
 │   └── case_management.py       # draft_correction, create_case_ticket
 ├── data/
 │   └── seed_transactions.json   # 5 seeded discrepancy scenarios
-├── ui/
-│   └── approval_gate/           # minimal single-case approval screen
 ├── evals/
 │   ├── cases.py                 # 5 Case definitions (strands-agents-evals)
 │   ├── run_evals.py             # Experiment driver (scripts/verify.sh step 6)
@@ -155,6 +162,14 @@ uv run --frozen --with google-genai==2.22.0 python -m evals.gemini_judge_5case
 # single-case canaries (LIVE)
 uv run --locked python -m evals.token_canary --case reversal-not-propagated
 uv run --frozen --with google-genai==2.22.0 python -m evals.gemini_judge_canary --case reversal-not-propagated
+
+# human approval flow — investigate, approve at the gate, execute, then
+# replay the consumed capability (LIVE Groq investigation; the gate,
+# executor, audit, and replay rejection are deterministic Python)
+uv run --locked python -m approval.cli --customer C-1004 --demo
+# loopback browser approval screen (renders the pending draft; the
+# deterministic Python gate stays authoritative; demo scope — no auth)
+uv run --locked python -m approval.web --customer C-1004
 ```
 
 `scripts/verify.sh` steps 1–2 and 5 are offline (segregation guard, tests);
@@ -183,6 +198,13 @@ the discovery and fix are documented there as well.
 
 ## Remaining work (explicit)
 
+- **End-to-end human-approval demo surface: BUILT (2026-09-05 pass),
+  live-validated once via the CLI** (see
+  [`docs/human-gate-e2e-validation-2026-09-05.md`](docs/human-gate-e2e-validation-2026-09-05.md)).
+  Remaining surface gaps: the browser screen has no live-browser
+  validation in the dev environment (loopback listeners are unreachable
+  from its shell — unit-tested render + delegation instead), and the
+  approver identity is unauthenticated per the §2.4 demo scope.
 - **Architecture-diagram artifact** (required by the hackathon rules):
   not yet created — the flowchart above is the only diagram that exists.
 - **Demo video: not recorded.** A text shot-list draft exists in
