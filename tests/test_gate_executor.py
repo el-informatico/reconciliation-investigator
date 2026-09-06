@@ -115,7 +115,11 @@ def test_eval_mode_key_is_a_committed_non_secret_by_design() -> None:
 
 
 def _draft_and_ticket(case_id="C-1001"):
-    draft = draft_correction(case_id, "balance", 1500.00, 1250.00, "reversal evidence")
+    # 2026-09-05 coherence rule: current_value must be the LIVE modern
+    # value (C-1001 balance 1250.00 — the earlier 1500.00/1250.00 pair
+    # was the legacy/modern swap the hygiene pass eliminates); the
+    # reversal-not-propagated fix proposes 1500.00.
+    draft = draft_correction(case_id, "balance", 1250.00, 1500.00, "reversal evidence")
     ticket = create_case_ticket(case_id, "summary", "REVERSAL_NOT_PROPAGATED", 0.92,
                                 ["L-TXN-90002"], draft["draft_id"])
     return draft, ticket
@@ -131,7 +135,7 @@ def test_gate_approve_issues_scoped_token_and_audits() -> None:
     outcome = run_human_gate("case file", latest_pending_draft("C-1001"), GateDecision(GateAction.APPROVE))
     assert outcome["action"] is GateAction.APPROVE
     ok, reason = validate_approval_token(
-        outcome["approval_token"], case_id="C-1001", field="balance", new_value=1250.00, consume=False
+        outcome["approval_token"], case_id="C-1001", field="balance", new_value=1500.00, consume=False
     )
     assert ok, reason
     audits = (seed_data.RUNTIME_DIR / "audit_log.jsonl").read_text().splitlines()

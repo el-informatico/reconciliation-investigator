@@ -179,6 +179,26 @@ def latest_ticket(case_id: str) -> dict | None:
     return ticket
 
 
+def ticket_for_draft(case_id: str, draft_id: str) -> dict | None:
+    """The ticket that links exactly this draft for this case (the
+    deterministic draft<->ticket association; 2026-09-05 identity pass).
+    Falls back to the case's latest ticket when no explicit link exists,
+    so legacy unlinked tickets still resolve."""
+    path = seed_data.runtime_path("tickets.jsonl")
+    if not path.exists():
+        return None
+    linked = None
+    latest = None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        record = json.loads(line)
+        if record.get("case_id") != case_id:
+            continue
+        latest = record
+        if record.get("correction_draft_id") == draft_id:
+            linked = record
+    return linked or latest
+
+
 def run_human_gate(
     case_file: str,
     correction_draft: dict | None,
@@ -196,11 +216,36 @@ def run_human_gate(
     if decision.action is GateAction.APPROVE:
         if not correction_draft:
             raise ValueError("cannot approve: no pending correction draft for this case")
-        token = issue_approval_token(
-            correction_draft["customer_id"],
-            correction_draft["field"],
-            correction_draft["proposed_value"],
-        )
+        try:
+            token = issue_approval_token(
+                correction_draft["customer_id"],
+                correction_draft["field"],
+                correction_draft["proposed_value"],
+            )
+        except ValueError as exc:
+            # A structurally invalid draft (e.g. a legacy non-canonical
+            # field, or a non-numeric value) can NEVER be approved: refuse
+            # deterministically — audited as gate_approval_refused, the
+            # draft closed as rejected, NO token issued, never a crash.
+            # draft_correction rejects these at creation time now; this
+            # covers drafts written before that guard existed.
+            _audit({
+                "type": "gate_approval_refused",
+                "at": at,
+                "approver": decision.approver,
+                "case_id": case_id or correction_draft.get("customer_id", ""),
+                "draft_id": correction_draft.get("draft_id", ""),
+                "error": str(exc),
+            })
+            from tools.case_management import update_draft
+
+            update_draft(correction_draft.get("draft_id", ""), status="rejected", failure_reason=str(exc))
+            return {
+                "action": GateAction.REJECT,
+                "reason": f"draft failed validation: {exc}",
+                "invalid_draft": True,
+                "tickets_closed": 0,
+            }
         _audit({
             "type": "gate_approval",
             "at": at,

@@ -16,7 +16,7 @@ import datetime as dt
 import json
 
 from orchestrator.human_gate import validate_approval_token
-from tools.case_management import update_draft, update_ticket
+from tools.case_management import get_draft, get_ticket, update_draft, update_ticket
 from tools.modern_system import apply_correction
 from tools.seed_data import effective_modern_record, normalize_field, runtime_path
 
@@ -54,10 +54,20 @@ def execute_correction(
             "draft_id": draft_id or None,
             "error": error,
         })
+        # Never downgrade a terminal record (2026-09-05 replay fix): a
+        # replay of an already-consumed token — or any late failure after
+        # a terminal outcome — must not rewrite history. A resolved
+        # correction stays resolved, an applied/rejected draft keeps its
+        # outcome; the failure itself is still audited above.
+        terminal_ticket = ("resolved", "rejected", "correction_failed")
         if ticket_id:
-            update_ticket(ticket_id, status="correction_failed", failure_reason=error)
+            ticket = get_ticket(ticket_id)
+            if ticket is None or ticket.get("status") not in terminal_ticket:
+                update_ticket(ticket_id, status="correction_failed", failure_reason=error)
         if draft_id:
-            update_draft(draft_id, status="correction_failed", failure_reason=error)
+            draft = get_draft(draft_id)
+            if draft is None or draft.get("status") not in ("applied", "rejected", "correction_failed"):
+                update_draft(draft_id, status="correction_failed", failure_reason=error)
         return {"status": "failed", "error": error}
 
     ok, reason = validate_approval_token(

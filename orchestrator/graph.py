@@ -288,6 +288,28 @@ def verdict_from_result(result: Any) -> dict[str, Any]:
 MAX_HUMAN_ROUNDS = 5
 
 
+def apply_gate_approval(case_id: str, gate: dict, draft: dict, approver: str = "human") -> dict:
+    """The single APPROVE->execute composition (§2.4 -> §2.5): resolve
+    the ticket that links this draft (deterministic draft<->ticket
+    association; falls back to the case's latest ticket), then execute
+    through the correction executor — the system's ONLY apply path.
+    Shared by run_case_with_gate and the approval surface so no second
+    authorization composition can arise (2026-09-05 identity pass)."""
+    from orchestrator import correction_executor
+    from orchestrator.human_gate import ticket_for_draft
+
+    ticket = ticket_for_draft(case_id, draft.get("draft_id", "")) or {}
+    return correction_executor.execute_correction(
+        gate["approval_token"],
+        case_id=case_id,
+        field=draft["field"],
+        new_value=draft["proposed_value"],
+        ticket_id=ticket.get("ticket_id", ""),
+        approver=approver,
+        draft_id=draft.get("draft_id", ""),
+    )
+
+
 def run_case_with_gate(
     instruction: str,
     *,
@@ -298,6 +320,9 @@ def run_case_with_gate(
 ) -> dict:
     """Run the §1 graph, then the deterministic §2.4/§2.5 path.
 
+    case_id is canonicalized at entry (one investigated customer = one
+    case; invented spellings raise before any graph invocation).
+
     decide(case_file_text, correction_draft_or_None) -> GateDecision.
     APPROVE -> issue the scoped token and execute the correction via the
     executor (the system's only apply path). REJECT -> ticket closed as
@@ -306,14 +331,14 @@ def run_case_with_gate(
     Returns the final graph result, normalized verdict, and gate/executor
     outcome — the single entry point the approval UI composes with.
     """
-    from orchestrator import correction_executor
     from orchestrator.human_gate import (
         GateAction,
         latest_pending_draft,
-        latest_ticket,
         run_human_gate,
     )
+    from tools.seed_data import canonical_case_id
 
+    case_id = canonical_case_id(case_id)
     graph_factory = build_graph or build_reconciliation_graph
     result = graph_factory(trace_attributes=trace_attributes)(instruction)
     outcome: dict = {}
@@ -321,7 +346,8 @@ def run_case_with_gate(
         verdict = verdict_from_result(result)
         draft = latest_pending_draft(case_id)
         case_file = str(getattr(getattr(result, "results", {}).get(REPORTER_NODE), "result", ""))
-        gate = run_human_gate(case_file, draft, decide(case_file, draft), case_id=case_id)
+        decision = decide(case_file, draft)
+        gate = run_human_gate(case_file, draft, decision, case_id=case_id)
         outcome = gate
         if gate["action"] is GateAction.REQUEST_MORE_INFO:
             # §2.4: route back with the human's note as the hint. The
@@ -337,15 +363,8 @@ def run_case_with_gate(
             # requires_correction diverged — the gate exists precisely to
             # let a human outrank the classifier, so the approval is never
             # silently dropped.
-            ticket = latest_ticket(case_id) or {}
-            executed = correction_executor.execute_correction(
-                gate["approval_token"],
-                case_id=case_id,
-                field=draft["field"],
-                new_value=draft["proposed_value"],
-                ticket_id=ticket.get("ticket_id", ""),
-                approver="human",
-                draft_id=draft.get("draft_id", ""),
+            executed = apply_gate_approval(
+                case_id, gate, draft, approver=getattr(decision, "approver", "human") or "human"
             )
             outcome = {"gate": gate, "correction": executed, "verdict": verdict}
         break

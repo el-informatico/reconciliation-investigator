@@ -104,7 +104,10 @@ def test_event_log_unknown_entity_raises() -> None:
 
 
 def test_draft_and_ticket_write_only_to_runtime_store() -> None:
-    draft = draft_correction("C-1001", "balance", 1500.00, 1250.00, "reversal not propagated")
+    # current_value = the LIVE modern value (1250.00); proposed = 1500.00
+    # (2026-09-05 coherence rule — the stored draft carries canonical
+    # typed values, and a no-op or incoherent draft is rejected).
+    draft = draft_correction("C-1001", "balance", 1250.00, 1500.00, "reversal not propagated")
     assert draft["status"] == "pending_approval"
     assert draft["draft_id"].startswith("DRF-")
     ticket = create_case_ticket(
@@ -144,16 +147,20 @@ def test_create_case_ticket_schema_allows_null_correction_draft_id() -> None:
         assert {"type": "null"} in prop["anyOf"]
 
     # End-to-end at the function boundary (the Pydantic input model): both
-    # null and a real draft id validate and are recorded verbatim.
+    # null and a real draft id validate and are recorded. Since the
+    # 2026-09-05 identity pass, the string case must be a REAL draft of
+    # the SAME case (a nonexistent "DRF-abc123def456" is rejected), so
+    # draft one first — the schema side of the regression is unaffected.
+    real = draft_correction("C-1003", "balance", 4050.00, 4200.00, "sync lag made it drift")
     t_none = create_case_ticket("C-1003", "s", "SYNC_LAG", 0.9, ["L-TXN-1"], None)
-    t_str = create_case_ticket("C-1003", "s", "DUPLICATE_TRANSACTION", 0.9, ["L-TXN-2"], "DRF-abc123def456")
+    t_str = create_case_ticket("C-1003", "s", "DUPLICATE_TRANSACTION", 0.9, ["L-TXN-2"], real["draft_id"])
     assert t_none["ticket_id"].startswith("TCK-")
     assert t_str["ticket_id"].startswith("TCK-")
     tickets = [
         json.loads(line)
         for line in (seed_data.RUNTIME_DIR / "tickets.jsonl").read_text().splitlines()
     ]
-    assert [t["correction_draft_id"] for t in tickets] == [None, "DRF-abc123def456"]
+    assert [t["correction_draft_id"] for t in tickets] == [None, real["draft_id"]]
 
 
 def test_apply_correction_is_a_plain_function_never_a_strands_tool() -> None:
