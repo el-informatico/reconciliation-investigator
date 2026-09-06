@@ -1,13 +1,16 @@
-"""Approval-surface tests (socket-free): the approval/ package renders
-state honestly and delegates every decision to the deterministic spine.
-The web screen's HTTP layer is NOT exercised here — this environment's
-shell cannot reach loopback listeners (a bare python -m http.server
-times out too; OBSERVED 2026-09-06), so the screen is verified at the
-render + delegation level and by code review; the CLI's flow is the
-live-verified surface (docs/human-gate-e2e-validation-2026-09-05.md).
+"""Approval-surface tests: the approval/ package renders state honestly
+and delegates every decision to the deterministic spine. The web
+screen's HTTP layer IS exercised below — over IPv6 loopback [::1],
+because this environment's shell cannot reach IPv4 loopback listeners
+(a bare python -m http.server on 127.0.0.1 times out too; OBSERVED
+2026-09-06) while ::1 is healthy on the same host
+(docs/approval-web-loopback-fix-and-validation-2026-09-06.md).
 """
 
 import json
+import threading
+import urllib.error
+import urllib.request
 
 import pytest
 
@@ -78,6 +81,143 @@ def test_web_execution_and_replay_cards_render_from_session_state() -> None:
     assert "Replay result" in page
     assert "refused the replay, as it must" in page
     assert "already consumed" in page
+
+
+# --- web screen HTTP layer (real sockets over ::1; IPv4 loopback is
+# --- unreachable from this environment's shell — see module docstring) ---
+
+
+def _http_server(case_id: str = "C-1001", approver: str = "human"):
+    state = {"token": None, "executed": None, "replay": None, "action_log": []}
+    server = web.build_server("::1", 0, case_id, approver, state)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server, f"http://[::1]:{server.server_address[1]}/"
+
+
+def _get(url: str):
+    with urllib.request.urlopen(url, timeout=5) as response:
+        return response.status, response.read().decode()
+
+
+def _post(url: str):
+    request = urllib.request.Request(url, data=b"", method="POST")
+    with urllib.request.urlopen(request, timeout=5) as response:
+        return response.status, response.read().decode()
+
+
+def _stop(server) -> None:
+    server.shutdown()
+    server.server_close()
+
+
+def _store_lines(name: str):
+    return [
+        json.loads(line)
+        for line in (seed_data.RUNTIME_DIR / name).read_text().splitlines()
+        if line.strip()
+    ]
+
+
+def test_http_layer_serves_cards_over_ipv6_loopback() -> None:
+    draft, ticket = _draft_and_ticket()
+    server, url = _http_server()
+    try:
+        status, page = _get(url)
+        assert status == 200
+        assert "C-1001" in page and ticket["ticket_id"] in page
+        assert "Proposed correction" in page and draft["draft_id"] in page
+        assert "1250.0" in page and "1500.0" in page
+        assert 'action="/approve"' in page  # the decision forms are wired
+    finally:
+        _stop(server)
+
+
+def test_http_layer_approve_runs_shared_gate_and_executor() -> None:
+    _draft_and_ticket()
+    server, url = _http_server(approver="http-test")
+    try:
+        status, page = _post(url + "approve")
+        assert status == 200
+        assert "Execution result" in page and "applied" in page
+        # The STORE proves the shared deterministic spine ran (not a UI
+        # reimplementation): audit chain, draft applied, ticket resolved,
+        # override mutation — the same artifacts the CLI path produces.
+        actions = [row.get("type") for row in _store_lines("audit_log.jsonl")]
+        assert "gate_approval" in actions and "correction_applied" in actions
+        assert _store_lines("drafts.jsonl")[-1]["status"] == "applied"
+        assert _store_lines("tickets.jsonl")[-1]["status"] == "resolved"
+        overrides = json.loads((seed_data.RUNTIME_DIR / "overrides.json").read_text())
+        assert overrides["C-1001"]["balance"] == 1500.0
+    finally:
+        _stop(server)
+
+
+def test_http_layer_approve_records_approver_in_both_audit_rows() -> None:
+    _draft_and_ticket()
+    approver = "http-approver-attribution"
+    server, url = _http_server(approver=approver)
+    try:
+        status, _page = _post(url + "approve")
+        assert status == 200
+        # Regression (2026-09-06): _do_approve omitted the approver kwarg
+        # on apply_gate_approval, so the executor's correction_applied row
+        # fell back to the default "human" while gate_approval carried the
+        # real --approver. Both rows must attribute the same approver.
+        rows = _store_lines("audit_log.jsonl")
+        gate = [r for r in rows if r.get("type") == "gate_approval"]
+        applied = [r for r in rows if r.get("type") == "correction_applied"]
+        assert len(gate) == 1 and len(applied) == 1
+        assert gate[0]["approver"] == approver
+        assert applied[0]["approver"] == approver
+    finally:
+        _stop(server)
+
+
+def test_http_layer_replay_is_refused_single_use() -> None:
+    _draft_and_ticket()
+    server, url = _http_server()
+    try:
+        _post(url + "approve")
+        status, page = _post(url + "replay")
+        assert status == 200
+        assert "the executor refused the replay, as it must" in page
+        assert "already consumed" in page
+        actions = [row.get("type") for row in _store_lines("audit_log.jsonl")]
+        assert "correction_failed" in actions  # the refused replay is audited
+        # consumed_tokens.jsonl holds bare jti strings (one per line): the
+        # approve consumed its jti exactly once and the replay added none.
+        consumed = [
+            line
+            for line in (seed_data.RUNTIME_DIR / "consumed_tokens.jsonl").read_text().splitlines()
+            if line.strip()
+        ]
+        assert len(consumed) == 1
+    finally:
+        _stop(server)
+
+
+def test_http_layer_second_approve_is_refused() -> None:
+    _draft_and_ticket()
+    server, url = _http_server()
+    try:
+        _post(url + "approve")
+        with pytest.raises(urllib.error.HTTPError) as excinfo:
+            _post(url + "approve")
+        assert excinfo.value.code == 500
+        error_page = excinfo.value.read().decode()
+        assert "cannot approve" in error_page
+        assert "no pending correction draft" in error_page
+    finally:
+        _stop(server)
+
+
+def test_bind_accepts_only_loopback_literals() -> None:
+    # committed default stays the IPv4 literal; the refusal (exit 2,
+    # before any socket is created) holds for wildcards, names, and LAN
+    # addresses alike — the demo boundary is loopback-scope only.
+    assert web.build_parser().get_default("bind") == "127.0.0.1"
+    for bad in ("0.0.0.0", "::", "localhost", "192.0.2.7"):
+        assert web.main(["--customer", "C-1004", "--bind", bad]) == 2
 
 
 # --- CLI: startup validation and scripted-decision plumbing ---

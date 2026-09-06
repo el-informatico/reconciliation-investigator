@@ -291,6 +291,10 @@ tighten the boundary.
 - The web screen binds 127.0.0.1, has no auth/session/CSRF protection,
   and is for demo presentation only (per contract §2.4 minimum viable
   interface; multi-case queue, auth, audit search explicitly deferred).
+  > AMENDED 2026-09-06: the screen also accepts `--bind ::1` (IPv6
+  > loopback; committed default unchanged at 127.0.0.1) — same
+  > loopback-only scope. See
+  > docs/approval-web-loopback-fix-and-validation-2026-09-06.md.
 - No real financial system exists in this stack (EVAL_MODE mock stores
   only); nothing here warrants a "financially safe" claim in any
   absolute sense.
@@ -301,6 +305,21 @@ tighten the boundary.
     verified by socket-free render/delegation unit tests and code
     review only. Live-browser validation is a remaining step for the
     human on the demo machine.
+    > SUPERSEDED 2026-09-06: the gap is closed — the root cause was
+    > IPv4-loopback-only (WSL2 mirrored host; ::1 is healthy), and the
+    > screen is now live-browser-validated (real Chromium over [::1],
+    > 19/19 checks) with its HTTP layer test-covered. See
+    > docs/approval-web-loopback-fix-and-validation-2026-09-06.md.
+    > The Windows-side GUI-browser check of the default 127.0.0.1 bind
+    > (curl-evidenced 200 OK) remains a human step.
+    > AMENDED 2026-09-06 (P0-C closeout): automated Windows-side
+    > validation of the default bind completed — real Windows Edge and
+    > Chrome headless engines rendered the screen (DOM dumps + PNG
+    > screenshots) and a native Windows client scripted the APPROVE
+    > through the real deterministic gate (both audit rows carry the
+    > custom approver). Only a headed interactive GUI click was not
+    > exercised. See docs/approval-web-loopback-fix-and-validation-
+    > 2026-09-06.md §10 and docs/p0c-closeout-2026-09-06.md.
   - The interactive CLI prompt against a live human (unit-tested with
     faked stdin; the live run used the labeled scripted mode).
   - Attempt 1's reporter-side draft failure is not diagnosable beyond

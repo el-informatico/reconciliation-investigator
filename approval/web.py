@@ -9,11 +9,15 @@ graph.apply_gate_approval); a replay button re-presents the consumed
 capability to the executor to show it refused. The page holds NO
 authority of its own — it is a view plus a button wired to the gate.
 
-Demo boundary (stated, not silent): loopback 127.0.0.1 only — this
-build refuses any other --bind — and no authentication, per §2.4's
-"auth ... out of scope for the demo" scoping. Session state
-(token / executed / replay / action log) is in-memory and dies with
-the process.
+Demo boundary (stated, not silent): loopback only — 127.0.0.1 (the
+committed default) or ::1; this build refuses any other --bind — and
+no authentication, per §2.4's "auth ... out of scope for the demo"
+scoping. Both accepted literals are loopback-scope, so the boundary
+is unchanged; ::1 exists because this repo's WSL2 mirrored dev host
+drops IPv4-loopback TCP while ::1 stays healthy (measured
+2026-09-06, docs/approval-web-loopback-fix-and-validation-2026-09-06.md).
+Session state (token / executed / replay / action log) is in-memory
+and dies with the process.
 """
 
 from __future__ import annotations
@@ -21,6 +25,7 @@ from __future__ import annotations
 import argparse
 import html
 import os
+import socket
 import sys
 import threading
 import urllib.parse
@@ -41,6 +46,18 @@ from tools.case_management import get_draft, get_ticket
 from tools.seed_data import canonical_case_id
 
 LOOPBACK = "127.0.0.1"
+# The closed set of accepted --bind values: loopback literals only,
+# compared by exact membership (no name resolution, no wildcards —
+# "localhost", "::", and "0.0.0.0" are all refused).
+LOOPBACK_BINDS = ("127.0.0.1", "::1")
+
+
+class _ThreadingHTTPServerV6(ThreadingHTTPServer):
+    """AF_INET6 flavor so the ::1 loopback literal can bind (hosts whose
+    IPv4 loopback TCP is dropped — this repo's WSL2 mirrored dev host —
+    still have a healthy ::1)."""
+
+    address_family = socket.AF_INET6
 
 # __BODY__ is replaced (not str.format — the CSS braces would all need
 # doubling); everything dynamic goes through html.escape first.
@@ -327,7 +344,7 @@ def _make_handler(case_id: str, approver: str, state: dict, lock: threading.Lock
             decision = GateDecision(GateAction.APPROVE, approver=approver)
             outcome = run_human_gate(self._case_file_text(), draft, decision, case_id=case_id)
             if outcome.get("action") is GateAction.APPROVE:
-                executed = apply_gate_approval(case_id, outcome, draft)
+                executed = apply_gate_approval(case_id, outcome, draft, approver=approver)
                 state["token"] = outcome.get("approval_token")
                 state["executed"] = executed
                 state["replay"] = None
@@ -399,6 +416,16 @@ def _make_handler(case_id: str, approver: str, state: dict, lock: threading.Lock
     return ApprovalHandler
 
 
+def build_server(
+    bind: str, port: int, case_id: str, approver: str, state: dict
+) -> ThreadingHTTPServer:
+    """The single construction path for the screen's server — main() and
+    the HTTP-layer tests share it, so no second wiring can arise. The
+    caller still owns serve_forever()/server_close()."""
+    cls = _ThreadingHTTPServerV6 if ":" in bind else ThreadingHTTPServer
+    return cls((bind, port), _make_handler(case_id, approver, state, threading.Lock()))
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m approval.web",
@@ -427,18 +454,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--bind",
         default=LOOPBACK,
-        help=f"bind address — REFUSED unless {LOOPBACK} in this demo build (default: {LOOPBACK})",
+        help=(
+            f"bind address — loopback literals only ({LOOPBACK} default; ::1 for"
+            " hosts whose IPv4 loopback is unreachable); anything else is REFUSED"
+        ),
     )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    if args.bind != LOOPBACK:
+    if args.bind not in LOOPBACK_BINDS:
         print(
-            f"error: --bind must be {LOOPBACK} in this demo build (got {args.bind!r}): "
-            "loopback-only is a stated demo boundary — the page carries no "
-            "authentication (docs/build-contract.md §2.4 scoping)",
+            f"error: --bind must be one of {' / '.join(LOOPBACK_BINDS)} in this "
+            f"demo build (got {args.bind!r}): loopback-only is a stated demo "
+            "boundary — the page carries no authentication "
+            "(docs/build-contract.md §2.4 scoping)",
             file=sys.stderr,
         )
         return 2
@@ -455,11 +486,10 @@ def main(argv: list[str] | None = None) -> int:
         # the spine resolves through seed_data.runtime_path -> RUNTIME_DIR.
         seed_data.RUNTIME_DIR = args.runtime_dir
     state: dict = {"token": None, "executed": None, "replay": None, "action_log": []}
-    server = ThreadingHTTPServer(
-        (args.bind, args.port), _make_handler(case_id, args.approver, state, threading.Lock())
-    )
+    server = build_server(args.bind, args.port, case_id, args.approver, state)
+    shown_host = f"[{args.bind}]" if ":" in args.bind else args.bind
     print(
-        f"approval screen for case {case_id}: http://{args.bind}:{args.port}/ (Ctrl+C to stop)",
+        f"approval screen for case {case_id}: http://{shown_host}:{args.port}/ (Ctrl+C to stop)",
         flush=True,
     )
     try:
