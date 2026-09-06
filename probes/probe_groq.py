@@ -107,7 +107,7 @@ def main() -> None:
     )
     args = ap.parse_args()
     stem = args.evidence_stem or str(
-        Path("~/projects/reconciliation-investigator/agent-memory/evidence")
+        Path(__file__).resolve().parent.parent / "agent-memory" / "evidence"
         / f"groq-probe-{args.env_tag}-2026-09-04"
     )
 

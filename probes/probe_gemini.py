@@ -99,7 +99,7 @@ def main() -> None:
     ap.add_argument("--model", default="gemini-3.1-flash-lite")
     ap.add_argument(
         "--evidence-stem",
-        default="~/projects/reconciliation-investigator/agent-memory/evidence/gemini-probe-2026-09-04",
+        default=str(Path(__file__).resolve().parent.parent / "agent-memory" / "evidence" / "gemini-probe-2026-09-04"),
     )
     ap.add_argument(
         "--only",

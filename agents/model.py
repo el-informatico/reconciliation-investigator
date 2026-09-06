@@ -11,12 +11,12 @@ API calls. Loaded from the environment, or from a gitignored `.env` at
 the repo root (environment wins; the file is never committed and its
 value is never printed anywhere, including logs).
 
-Model: openai/gpt-oss-120b — the same validated, tool-calling-proven
-Groq configuration as [SIBLING-B] (see that repo's application
-yml and decisions D007/D010/D012). Quota discipline imported from its
-lesson L007: keyless tests iterate; live runs are BUDGETED (~80-100
-calls per eval run against the free-tier daily cap) and 429s are
-reported and rescheduled, never retried blindly.
+Model: openai/gpt-oss-120b — a tool-calling-proven Groq configuration
+previously validated in an earlier project (that project's internal
+decision log is not part of this repo). Quota discipline carried over
+from the same experience: keyless tests iterate; live runs are
+BUDGETED (~80-100 calls per eval run against the free-tier daily cap)
+and 429s are reported and rescheduled, never retried blindly.
 """
 
 import os

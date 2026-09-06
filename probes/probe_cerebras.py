@@ -96,7 +96,7 @@ def main() -> None:
     ap.add_argument("--model", default="gpt-oss-120b")
     ap.add_argument(
         "--evidence-stem",
-        default="~/projects/reconciliation-investigator/agent-memory/evidence/cerebras-probe-2026-09-04",
+        default=str(Path(__file__).resolve().parent.parent / "agent-memory" / "evidence" / "cerebras-probe-2026-09-04"),
     )
     args = ap.parse_args()
 
