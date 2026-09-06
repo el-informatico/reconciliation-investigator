@@ -27,7 +27,7 @@ EXECUTE → AUDIT → REPLAY ATTEMPT → REJECTED.
 
 | File | Change |
 |---|---|
-| `tools/seed_data.py` | Added `canonical_case_id()`, `modern_status_values()`, `validate_correction_value()` (deterministic identity + value contract; whitelist follows the frozen seed). |
+| `tools/seed_data.py` | Added `canonical_case_id()`, `modern_status_values()` [CORRECTED 2026-09-06 — the actual function is `status_values()` (`tools/seed_data.py:82`); no `modern_status_values` exists], `validate_correction_value()` (deterministic identity + value contract; whitelist follows the frozen seed). |
 | `tools/case_management.py` | `draft_correction` and `create_case_ticket` now validate deterministically at creation time (see §3/§4); added `get_draft()`/`get_ticket()` read helpers. Tool signatures and returns unchanged (contract §3). |
 | `orchestrator/human_gate.py` | (C1 scope lock) Added `ticket_for_draft()`; APPROVE of a structurally invalid draft is now an audited refusal (`gate_approval_refused`, draft → `rejected`, no token, never a crash — previously an uncaught `ValueError` at `human_gate.py:77`). |
 | `orchestrator/correction_executor.py` | (C1 scope lock) `_fail` is terminal-state-aware: a replay/late failure never downgrades a `resolved`/`applied`/`rejected` record; the failure is always audited. |

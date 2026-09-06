@@ -161,6 +161,15 @@ after the split pair; commit diffs +116/−27 and +35/−13).
   the messages confirms none carries an AI-tool reference.
 - **Nothing pushed**: local commits only; no `git push` issued this
   session. MEASURED (`git status -b`: ahead of origin/main only).
+  [CORRECTED 2026-09-06, later pushes: true when this report was
+  written; later the same day the accumulated-work push published all
+  21 commits `c5f5e13..0699249` — this report's own commit included —
+  and origin/main subsequently advanced to `26e203b` (architecture
+  diagram) and `c537965` (DEVPOST-DRAFT fix). Push confirmations:
+  `agent-memory/evaluation-fix-and-push-2026-09-06.md` §5 and
+  `agent-memory/devpost-draft-accuracy-pass-2026-09-06.md` §4 (both
+  local-only, untracked files); the range on origin is independently
+  verifiable via `git log c5f5e13..c537965`.]
 - Commit 2 was amended once pre-finalization (`7b264fb` → `6387ddd`)
   to normalize two PNG file modes copied from `/mnt/c` (100755→100644);
   message and content otherwise unchanged. OBSERVED.
@@ -194,7 +203,12 @@ ac08b36  Add rejected-call diagnostics log and viewer
 
 The branch remains locally ahead of origin/main (which includes the 15
 pre-session commits from the earlier accumulated-work landing);
-origin/main is untouched at `c5f5e13`. MEASURED.
+origin/main is untouched at `c5f5e13`. MEASURED. [CORRECTED
+2026-09-06, later pushes: accurate when written; later that day the
+accumulated-work push moved origin/main to `0699249` (all 21 commits
+`c5f5e13..0699249`, this report included), then `26e203b` and
+`c537965` followed — origin/main now sits at `c537965`. See the
+matching correction in §4.]
 
 ## 7. Gates, review, and scope fences
 
