@@ -124,7 +124,7 @@ reconciliation-investigator/
 │   ├── gemini_judge_canary.py   # single-case canary (same split)
 │   ├── groq_parsing_retry_canary.py
 │   └── token_canary.py
-├── tests/                       # 17 offline test files (hermetic, no API keys)
+├── tests/                       # 18 offline test files (hermetic, no API keys)
 ├── scripts/
 │   ├── verify.sh                # authoritative end-to-end evidence
 │   ├── guard-segregation-of-duties.sh
@@ -201,10 +201,12 @@ the discovery and fix are documented there as well.
 - **End-to-end human-approval demo surface: BUILT (2026-09-05 pass),
   live-validated once via the CLI** (see
   [`docs/human-gate-e2e-validation-2026-09-05.md`](docs/human-gate-e2e-validation-2026-09-05.md)).
-  Remaining surface gaps: the browser screen has no live-browser
-  validation in the dev environment (loopback listeners are unreachable
-  from its shell — unit-tested render + delegation instead), and the
-  approver identity is unauthenticated per the §2.4 demo scope.
+  Remaining surface gaps: the approver identity is unauthenticated per
+  the §2.4 demo scope. The browser screen is live-browser validated in
+  the dev environment (2026-09-06: real Chromium over `[::1]`, plus
+  Windows-side headless Edge/Chrome rendering and a scripted APPROVE
+  against the default `127.0.0.1` bind — see
+  `docs/approval-web-loopback-fix-and-validation-2026-09-06.md`).
 - **Architecture-diagram artifact** (required by the hackathon rules):
   not yet created — the flowchart above is the only diagram that exists.
 - **Demo video: not recorded.** A text shot-list draft exists in
