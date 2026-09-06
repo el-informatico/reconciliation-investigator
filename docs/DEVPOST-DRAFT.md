@@ -79,7 +79,7 @@ The honest list:
    The seed scenario — the answer key — was reaching the agents' prompts
    verbatim. Every accuracy number we had previously recorded was an
    upper bound, not a measurement. We removed the leak (three separate
-   channels), added regression tests, threw out every contaminated figure,
+   sites), added regression tests, threw out every contaminated figure,
    and re-measured from zero. The clean baseline and the full story are in
    [`docs/EVALUATION.md`](EVALUATION.md).
 
@@ -105,10 +105,18 @@ invalidate your own headline numbers.
 
 ## What's next (explicitly unfinished — also listed in docs/EVALUATION.md)
 
-- The polished end-to-end human-approval demo surface (the gate, tokens, and
-  executor are implemented and tested at the code level; the UI is not built).
+- The human-approval demo surface — built to the demo minimum: a CLI
+  (`approval/cli.py`) and a minimal loopback-only web screen
+  (`approval/web.py`), both driving the same deterministic
+  `orchestrator/human_gate.py` gate, both live-validated (the CLI end-to-end
+  on one case with a live investigation; the web screen via real
+  headless-browser form submissions). Honest bounds: single-case surface,
+  EVAL_MODE-only, approver identity unauthenticated by design,
+  headed-browser interaction untested.
 - The standalone architecture-diagram artifact required by the hackathon
-  rules.
+  rules — created: `docs/architecture-diagram.png` (the upload copy;
+  `docs/architecture-diagram-2026-09-06.md` holds the Mermaid source and
+  an element-to-code accuracy map), also embedded in the README.
 - The demo video (not recorded — shot-list draft below).
 - Repeated clean runs to turn single data points into rates; remediation of
   the tool-parameter fabrication pattern.
@@ -148,6 +156,7 @@ Every shot shows something that actually exists in the repository today.
 6. **Honest results.** Screen: `docs/EVALUATION.md`. Narration: the clean
    baseline is a single observed data point, not a rate; the eval-leak
    discovery story; the named open limitation (fabricated tool parameters).
-7. **Close — what's unfinished.** The remaining-work list on screen: approval
-   UI, diagram artifact, this video. End on the thesis line: "The agent can
-   investigate the money. It cannot touch the money."
+7. **Close — what's unfinished.** The remaining-work list on screen:
+   repeated clean runs, tool-parameter remediation, this video. End on the
+   thesis line: "The agent can investigate the money. It cannot touch the
+   money."
