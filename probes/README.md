@@ -9,9 +9,12 @@ SEPARATE from the application and the benchmark:
 - No changes to the app's Groq wiring, the eval harness, or any case data.
 - No write/correction tools are ever declared or sent to a model — the only
   tool any probe defines is a synthetic read-only `get_balance`.
-- Credentials: `probe_common.load_credentials()` loads ONLY the explicitly
-  requested variable NAMES (`CEREBRAS_API_KEY` / `GEMINI_API_KEY`) from an
-  explicit `.env` file (default: the `../[SIBLING-A]` sibling).
+- Credentials: `--env-file` is REQUIRED with NO default (since 2026-09-05;
+  it previously defaulted to a sibling project's `.env` — see
+  `docs/probes-sibling-env-remediation-2026-09-05.md`).
+  `probe_common.load_credentials()` loads ONLY the explicitly requested
+  variable NAMES (`CEREBRAS_API_KEY` / `GEMINI_API_KEY` / `GROQ_API_KEY`)
+  from the file you pass.
   Values are passed in-process to the HTTP client / SDK client and are
   never printed, logged, or written. Every line that leaves a probe
   (stdout, evidence files) passes through a redactor that masks the loaded
@@ -35,19 +38,27 @@ backend seat's `agents|orchestrator|tools|tests` tree.
 | `probe_common.py` | env loader (names only), redactor, HTTP capture, evidence writer |
 | `probe_cerebras.py` | raw REST probe: auth/models, tiny completion, tool call + replay |
 | `probe_gemini.py` | raw REST probe: model list, tiny completion, function call + replay, structured output |
-| `probe_groq.py` | two-key Groq probe (openai-sdk transport): models list, tiny completion, tool round + replay, full `x-ratelimit-*` capture — one `--env-file`/`--env-tag` per sibling project |
+| `probe_groq.py` | two-key Groq probe (openai-sdk transport): models list, tiny completion, tool round + replay, full `x-ratelimit-*` capture — one `--env-file`/`--env-tag` per credential source |
 | `probe_strands.py` | the app's exact Strands `OpenAIModel`/`GeminiModel` idiom against each provider, with a synthetic tool loop |
 
 ## Usage (from the repo root)
 
+`--env-file` is required everywhere — there is no default. (The 2026-09-04
+feasibility runs pointed it at sibling-project `.env` files under a
+since-superseded authorization, D-2026-09-04-12/-13; see
+`docs/probes-sibling-env-remediation-2026-09-05.md`.) This repo's own
+`.env` is a valid explicit choice for the `GROQ_API_KEY`/`GEMINI_API_KEY`
+probes; `CEREBRAS_API_KEY` is not in this repo's `.env`, so the Cerebras
+probes exit with `credential(s) not present in env file` if pointed there.
+
 ```bash
-uv run --locked python probes/probe_cerebras.py
-uv run --locked python probes/probe_gemini.py
-uv run --locked python probes/probe_groq.py --env-file ~/projects/[SIBLING-A]/.env --env-tag [SIBLING-A]
-uv run --locked python probes/probe_groq.py --env-file ~/projects/[SIBLING-B]/.env      --env-tag gateway
-uv run --locked python probes/probe_strands.py --provider cerebras
-uv run --locked python probes/probe_strands.py --provider gemini-compat
-uv run --frozen --with google-genai python probes/probe_strands.py --provider gemini-native
+uv run --locked python probes/probe_cerebras.py --env-file /path/to/cerebras.env
+uv run --locked python probes/probe_gemini.py  --env-file /path/to/gemini.env
+uv run --locked python probes/probe_groq.py    --env-file /path/to/first.env  --env-tag [SIBLING-A]
+uv run --locked python probes/probe_groq.py    --env-file /path/to/second.env --env-tag gateway
+uv run --locked python probes/probe_strands.py --provider cerebras      --env-file /path/to/cerebras.env
+uv run --locked python probes/probe_strands.py --provider gemini-compat --env-file /path/to/gemini.env
+uv run --frozen --with google-genai python probes/probe_strands.py --provider gemini-native --env-file /path/to/gemini.env
 ```
 
 Evidence lands in `agent-memory/evidence/` (`.json` machine records,

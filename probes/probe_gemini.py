@@ -32,7 +32,6 @@ import json
 from pathlib import Path
 
 from probe_common import (
-    DEFAULT_ENV_FILE,
     Evidence,
     body_json,
     http_json,
@@ -94,7 +93,8 @@ def _function_call_part(data: dict) -> dict | None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--env-file", default=str(DEFAULT_ENV_FILE))
+    ap.add_argument("--env-file", required=True,
+                    help=".env file to read GEMINI_API_KEY from (by name only; required — no default)")
     ap.add_argument("--base-url", default="https://generativelanguage.googleapis.com")
     ap.add_argument("--model", default="gemini-3.1-flash-lite")
     ap.add_argument(

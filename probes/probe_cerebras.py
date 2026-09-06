@@ -35,7 +35,7 @@ from pathlib import Path
 
 import openai
 
-from probe_common import DEFAULT_ENV_FILE, Evidence, load_credentials, make_redactor
+from probe_common import Evidence, load_credentials, make_redactor
 
 TOOL_DEF = {
     "type": "function",
@@ -90,7 +90,8 @@ def _call(ev: dict, label: str, fn) -> tuple[dict, object | None]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--env-file", default=str(DEFAULT_ENV_FILE))
+    ap.add_argument("--env-file", required=True,
+                    help=".env file to read CEREBRAS_API_KEY from (by name only; required — no default)")
     ap.add_argument("--base-url", default="https://api.cerebras.ai/v1")
     ap.add_argument("--model", default="gpt-oss-120b")
     ap.add_argument(

@@ -16,7 +16,8 @@ Providers:
   cerebras      OpenAIModel -> https://api.cerebras.ai/v1          (gpt-oss-120b)
   gemini-compat OpenAIModel -> .../v1beta/openai/  (Gemini OpenAI-compat layer)
   gemini-native GeminiModel (strands.models.gemini; needs google-genai:
-                             run via `uv run --with google-genai ...`)
+                             run via `uv run --with google-genai ...`;
+                             --env-file required as everywhere)
 """
 
 from __future__ import annotations
@@ -26,7 +27,7 @@ import json
 import time
 from pathlib import Path
 
-from probe_common import DEFAULT_ENV_FILE, load_credentials, make_redactor
+from probe_common import load_credentials, make_redactor
 
 QUESTION = "What is the settled balance of account ACC-1? Use the get_balance tool, then answer in one short sentence."
 SYSTEM_PROMPT = (
@@ -79,7 +80,8 @@ def _run_agent(name: str, model, redact) -> bool:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--provider", required=True, choices=["cerebras", "gemini-compat", "gemini-native"])
-    ap.add_argument("--env-file", default=str(DEFAULT_ENV_FILE))
+    ap.add_argument("--env-file", required=True,
+                    help=".env file to read the provider API key from (by name only; required — no default)")
     args = ap.parse_args()
 
     if args.provider == "cerebras":
@@ -112,7 +114,7 @@ def main() -> None:
             from strands.models.gemini import GeminiModel
         except ImportError as exc:
             print(f"[gemini-native] SKIP — strands.models.gemini unavailable: {exc}")
-            print("                run via: uv run --with google-genai python probes/probe_strands.py --provider gemini-native")
+            print("                run via: uv run --with google-genai python probes/probe_strands.py --provider gemini-native --env-file /path/to/gemini.env")
             return
         creds = load_credentials(Path(args.env_file), ["GEMINI_API_KEY"])
         redact = make_redactor(creds)

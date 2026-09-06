@@ -30,10 +30,6 @@ _KEY_PATTERNS = [
     re.compile(r"Bearer\s+[0-9A-Za-z_\-.]+"),
 ]
 
-# Default credential source: the sibling project's .env (names verified
-# present there on 2026-09-04; values never read into any output).
-DEFAULT_ENV_FILE = Path("~/projects/[SIBLING-A]/.env")
-
 
 def load_credentials(env_file: Path, names: list[str]) -> dict[str, str]:
     """Load ONLY `names` from a .env-style file. Values are never printed."""

@@ -1,11 +1,11 @@
 """Groq two-key live probe (2026-09-04). See probes/README.md.
 
-Re-validates each sibling project's Groq environment INDEPENDENTLY
+Re-validates each credential source's Groq environment INDEPENDENTLY
 (treat the two GROQ_API_KEY values as unrelated organizations until
 response metadata says otherwise — key values are never compared):
 
-  --env-file ~/projects/[SIBLING-A]/.env  --env-tag [SIBLING-A]
-  --env-file ~/projects/[SIBLING-B]/.env     --env-tag gateway
+  --env-file /path/to/first/.env   --env-tag [SIBLING-A]
+  --env-file /path/to/second/.env  --env-tag gateway
 
 Phases and per-environment call budget (<=4 requests total):
   1. models.list                      (auth + openai/gpt-oss-120b presence; sanitized boolean)
@@ -36,7 +36,7 @@ from pathlib import Path
 
 import openai
 
-from probe_common import DEFAULT_ENV_FILE, Evidence, load_credentials, make_redactor
+from probe_common import Evidence, load_credentials, make_redactor
 
 MODEL = "openai/gpt-oss-120b"
 BASE_URL = "https://api.groq.com/openai/v1"
@@ -93,8 +93,8 @@ def _call(ev: Evidence, label: str, fn) -> tuple[dict, object | None]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--env-file", default=str(DEFAULT_ENV_FILE),
-                    help="sibling .env to read GROQ_API_KEY from (by name only)")
+    ap.add_argument("--env-file", required=True,
+                    help=".env file to read GROQ_API_KEY from (by name only; required — no default)")
     ap.add_argument("--env-tag", required=True,
                     choices=["[SIBLING-A]", "gateway"],
                     help="label for evidence files and summaries")
