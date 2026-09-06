@@ -1,11 +1,11 @@
 # Evaluation & results — the honest summary
 
-**As of 2026-09-05.** This document summarizes what has and has not been
-measured for Reconciliation Investigator. It introduces **no new
-measurements**: every figure below is quoted from a cited source report, and
-every claim carries a classification tag. Results exist and are cited; gaps
-are named as gaps. (DOCUMENTED throughout — the cited source is the
-authority.)
+**As of 2026-09-06.** This document summarizes what has and has not been
+measured for Reconciliation Investigator. Every figure below is quoted from
+a cited source report and carries a classification tag, with one exception
+introduced by the 2026-09-06 correction pass: §9's offline-suite count was
+re-executed that day. Results exist and are cited; gaps are named as gaps.
+(DOCUMENTED throughout — the cited source is the authority.)
 
 ## 0. How to read this document
 
@@ -222,22 +222,51 @@ retry/OTel/infrastructure-token figures.
 
 ## 8. What remains unfinished (explicit, not implied)
 
-1. **The end-to-end human-approval demo surface (P0-C): NOT built.** The
-   human gate, capability tokens, and correction executor are implemented and
-   tested at the code level (HMAC-SHA256-signed, case/field/value-scoped,
-   expiring (600 s default TTL), single-use tokens with a persisted
-   consumption ledger and an audit trail) — but the approval experience today
-   is an orchestrator-level Python API (`run_case_with_gate()` with a
-   caller-supplied decision callback) exercised by tests. **No UI and no CLI
-   exist**; approver identity authentication is explicitly out of scope for
-   this pass. (OBSERVED — code and `docs/build-contract.md` §2.4 deferral;
-   "P0-C" is submission-roadmap nomenclature; the repo's docs carry its P0-A /
-   P0-B predecessors)
-2. **Architecture-diagram artifact (required by the hackathon rules): NOT
-   created.** The README carries a small mermaid flowchart; the required
-   standalone diagram artifact does not exist. (OBSERVED)
-3. **Demo video: NOT recorded.** No recording, storyboard, or screenshots
-   exist; a text shot-list draft lives in `docs/DEVPOST-DRAFT.md`. (OBSERVED)
+1. **The end-to-end human-approval demo surface (P0-C): BUILT (2026-09-05/06;
+   this entry originally read "NOT built").** The human gate, capability
+   tokens, and correction executor are implemented and tested at the code
+   level (HMAC-SHA256-signed, case/field/value-scoped, expiring (600 s
+   default TTL), single-use tokens with a persisted consumption ledger and an
+   audit trail), and two minimal surfaces now sit on top of the same
+   deterministic gate (`orchestrator/human_gate.py`): `approval/cli.py`, a
+   single-case interactive terminal flow (`python -m approval.cli`), and
+   `approval/web.py`, a one-page loopback-only browser screen
+   (`python -m approval.web`: default bind `127.0.0.1`, `::1` also accepted,
+   every other `--bind` refused; stdlib `http.server`, no framework, no
+   JavaScript, in-memory session state). Neither surface holds authority of
+   its own — both render the case + proposed correction and turn
+   APPROVE/REJECT into a `GateDecision` for the gate. Live validation on
+   record: **CLI** — case C-1004 with a live Groq investigation through
+   gate → token → executor → single-use replay refusal → 5/5 negative
+   token matrix, the approval itself made in the labeled scripted
+   `--non-interactive` mode (interactive prompt path unit-tested, not
+   live-human-tested) (`docs/human-gate-e2e-validation-2026-09-05.md` §7/§10);
+   **web** — real headless Chromium via Playwright over `[::1]:8765` with
+   real form submissions (19/19 checks; deterministically seeded case, zero
+   LLM calls) plus Windows-side headless Edge/Chrome rendering and a scripted
+   HTTP APPROVE + replay refusal against the committed default bind
+   (`docs/approval-web-loopback-fix-and-validation-2026-09-06.md` §4/§10).
+   Demo scope unchanged and stated, not silent: single-case surface;
+   approver identity unauthenticated by design (a free string); multi-case
+   queue management and audit search out of scope per
+   `docs/build-contract.md` §2.4 — which prescribes exactly this minimum
+   interface, so this entry's earlier "§2.4 deferral" attribution was wrong
+   (§2.4 defers auth/queue/search, not the surface); the spine is
+   EVAL_MODE-only (dev signing key public by design; production requires
+   `CORRECTION_TOKEN_SECRET`); headed interactive browser use untested.
+   (OBSERVED — code, README approval section, and the two validation
+   reports; "P0-C" is submission-roadmap nomenclature)
+2. **Architecture-diagram artifact (required by the hackathon rules):
+   CREATED (2026-09-06; this entry originally read "NOT created").** Lives
+   at `docs/architecture-diagram-2026-09-06.md` — comprehensive diagram of
+   the agent graph, human gate, capability token, and execution path, with
+   an accuracy map (element → code anchor) and rendered SVG/PNG exports;
+   embedded in the README and pinned byte-identical there by
+   `tests/test_architecture_diagram_sync.py`. (OBSERVED)
+3. **Demo video: NOT recorded.** No recording, storyboard, or demo footage
+   exists (the repo's only screenshots are 2026-09-06 approval-UI validation
+   artifacts under `agent-memory/evidence/`, not demo material); a text
+   shot-list draft lives in `docs/DEVPOST-DRAFT.md`. (OBSERVED)
 4. Accuracy is one data point per metric (§3); **repeated clean runs** are
    needed before any figure is called a rate. (DOCUMENTED)
 5. Retry **exhaustion/multi-attempt** behavior is offline-proven only (§4).
@@ -245,16 +274,21 @@ retry/OTel/infrastructure-token figures.
 6. The tool-parameter fabrication pattern (§5) is an open remediation item.
    (DOCUMENTED)
 7. The repository is currently **PRIVATE** (`el-informatico/reconciliation-investigator`);
-   making it public for submission is a pending human decision, and the
-   current work tree contains uncommitted work. (OBSERVED)
+   making it public for submission is a pending human decision. (OBSERVED)
 
 ## 9. Offline test suite
 
-Most recent count on record: **155 passed** (clean-run task, per
-`docs/clean-5case-validation-2026-09-05.md` §1d; trajectory 132 → 150 with
-the leak fix's 18 new tests, `docs/eval-ground-truth-leak-fix-2026-09-05.md`
-§5 → 155). Not re-executed for this summary (this task ran no tests, by
-constraint). (DOCUMENTED)
+Most recent count on record: **218 passed** (offline suite re-executed
+2026-09-06, `uv run --locked pytest -q`, before the diagram/docs commit).
+Lineage: 132 → 150 with the leak fix's 18 new tests
+(`docs/eval-ground-truth-leak-fix-2026-09-05.md` §5) → 155 (clean-run
+task, `docs/clean-5case-validation-2026-09-05.md` §1d) → 190 (human-gate
+task, `docs/human-gate-e2e-validation-2026-09-05.md` §8) → 216
+(rejected-call diagnostics + loopback web tests,
+`docs/draft-rejection-diagnostics-2026-09-06.md` §7) → 217
+(approver-attribution regression test, `docs/p0c-closeout-2026-09-06.md`
+§5) → 218 (+ the diagram-sync test, this commit). (218 MEASURED 2026-09-06;
+lineage DOCUMENTED per the cited docs)
 
 ## 10. Source map
 

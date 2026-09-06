@@ -32,20 +32,81 @@ reasoning agents, and requires explicit human approval.
 ## Architecture
 
 ```mermaid
-flowchart TD
-    A[Detector + investigator] --> B[Root cause classifier]
-    B -->|confidence < 0.7, under 3-round cap| A
-    B -->|3-round cap hit| C[Reporter: case file, root cause UNKNOWN]
-    B -->|confidence >= 0.7| C
-    C -->|no correction needed| E[Case closed: no action]
-    C -->|correction drafted| D[Human approval gate]
-    D -->|approve| F[Correction executor]
-    D -->|reject| E
-    D -->|request more info| A
+flowchart TB
+    subgraph AG["AGENT GRAPH — LLM agents (Groq openai/gpt-oss-120b)<br/>capability: read + draft only — no mutation tool exists on this side"]
+        direction LR
+        DET["Detector-investigator agent<br/>tool access: READ-ONLY<br/>read_legacy_system · read_modern_system<br/>search_transactions · get_event_log"]
+        CLS["Classifier agent<br/>tool access: NONE<br/>pure reasoning over the evidence"]
+        REP["Reporter agent<br/>tool access: DRAFT-ONLY<br/>draft_correction · create_case_ticket"]
+        STORES["runtime case stores<br/>drafts.jsonl · tickets.jsonl<br/>(+ rejected_calls.jsonl diagnostics)"]
+        CLOSED_NC["CASE CLOSED — no action<br/>ticket filed, no draft created"]
+        DET --> CLS
+        CLS -->|"confidence < 0.7 and rounds < 3"| DET
+        CLS -->|"confidence >= 0.7 OR 3-round cap:<br/>force-route (root cause surfaced as<br/>UNKNOWN after the graph, not in it)"| REP
+        DET -->|"evidence bundle, every run"| REP
+        REP -->|"draft (if warranted) + ticket (always)"| STORES
+        REP -->|"no correction warranted"| CLOSED_NC
+    end
+
+    subgraph HG["HUMAN GATE — deterministic orchestrator step + human operator<br/>(outside the agent graph)"]
+        direction LR
+        SURF["Approval surface — renders the case,<br/>holds no authority of its own:<br/>approval.cli terminal · approval.web loopback-only"]
+        HUM["HUMAN APPROVER<br/>reviews case + proposed correction:<br/>APPROVE / REJECT / REQUEST MORE INFO"]
+        GATE["Human gate<br/>orchestrator/human_gate.py<br/>(deterministic Python)"]
+        TOK["Capability token, issued on APPROVE:<br/>HMAC-SHA256 signed · case-scoped<br/>(one field + one value) · 10-minute TTL<br/>· single-use (jti)"]
+        CLOSED_REJ["CASE CLOSED —<br/>tickets rejected + human reason"]
+        SURF --> HUM
+        HUM --> GATE
+        GATE -->|"APPROVE"| TOK
+        GATE -->|"REJECT"| CLOSED_REJ
+    end
+
+    subgraph EX["EXECUTION — deterministic code, the sole mutation path"]
+        direction LR
+        VALID["Token validation at executor entry:<br/>signature · expiry · case/field/value scope<br/>· single-use (consumed_tokens.jsonl)"]
+        EXEC["Correction executor<br/>the ONLY caller of apply_correction"]
+        APPLY["apply_correction<br/>the system's only financial write<br/>(the modern-system record)"]
+        AUD["Audit trail — every gate and<br/>executor event: runtime/audit_log.jsonl"]
+        VALID -->|"valid"| EXEC
+        EXEC --> APPLY
+        EXEC -->|"correction_applied"| AUD
+        VALID -.->|"replay / expired / out-of-scope:<br/>rejected + logged correction_failed,<br/>terminal statuses never downgraded"| AUD
+    end
+
+    subgraph EV["OFFLINE EVAL HARNESS — not part of the runtime path"]
+        JUDGE["Gemini judges (gemini-3.1-flash-lite)<br/>4 LLM-judged dimensions +<br/>deterministic safe-action check"]
+    end
+
+    AG -->|"pending draft + open ticket"| HG
+    HG -->|"one-time capability token"| EX
+    HG -.->|"request more info: fresh investigation<br/>(bounded, 5 human rounds)"| AG
+
+    NOTE["NO PATH EXISTS from any LLM agent<br/>to apply_correction: it is never registered<br/>in any agent's tools list — mechanically enforced<br/>by scripts/guard-segregation-of-duties.sh<br/>(verify.sh step 2 + git pre-commit)"]
+    NOTE ~~~ EX
+
+    classDef ag fill:#E8F0FE,stroke:#1A73E8,color:#202124
+    classDef human fill:#FEF7E0,stroke:#F9AB00,color:#202124
+    classDef gate fill:#EEF1F6,stroke:#5F6B7C,color:#202124
+    classDef token fill:#E6F4EA,stroke:#137333,color:#202124
+    classDef mut fill:#FCE8E6,stroke:#D93025,color:#202124
+    classDef store fill:#F1F3F4,stroke:#9AA0A6,color:#202124
+    classDef note fill:#FFFFFF,stroke:#D93025,color:#D93025,stroke-dasharray:5 4
+    class DET,CLS,REP ag
+    class SURF,HUM human
+    class GATE gate
+    class TOK token
+    class VALID,EXEC,APPLY mut
+    class STORES,AUD,CLOSED_NC,CLOSED_REJ,JUDGE store
+    class NOTE note
 ```
 
 Full system prompts, tool schemas, and the segregation-of-duties invariant
-are specified in [`docs/build-contract.md`](docs/build-contract.md).
+are specified in [`docs/build-contract.md`](docs/build-contract.md). The
+diagram's accuracy map (element → code anchor), rendered SVG/PNG exports
+for the hackathon upload, and rendering instructions live in
+[`docs/architecture-diagram-2026-09-06.md`](docs/architecture-diagram-2026-09-06.md)
+— kept byte-identical to the block above by
+`tests/test_architecture_diagram_sync.py`.
 
 **Key design decision:** the tool that writes to the modern system
 (`apply_correction`) is never registered on any LLM agent — it exists only
@@ -124,7 +185,7 @@ reconciliation-investigator/
 │   ├── gemini_judge_canary.py   # single-case canary (same split)
 │   ├── groq_parsing_retry_canary.py
 │   └── token_canary.py
-├── tests/                       # 18 offline test files (hermetic, no API keys)
+├── tests/                       # 19 offline test files (hermetic, no API keys)
 ├── scripts/
 │   ├── verify.sh                # authoritative end-to-end evidence
 │   ├── guard-segregation-of-duties.sh
@@ -207,8 +268,10 @@ the discovery and fix are documented there as well.
   Windows-side headless Edge/Chrome rendering and a scripted APPROVE
   against the default `127.0.0.1` bind — see
   `docs/approval-web-loopback-fix-and-validation-2026-09-06.md`).
-- **Architecture-diagram artifact** (required by the hackathon rules):
-  not yet created — the flowchart above is the only diagram that exists.
+- **Architecture-diagram artifact (required by the hackathon rules):
+  CREATED (2026-09-06)** — the flowchart above, with its accuracy map and
+  rendered SVG/PNG exports, lives in
+  [`docs/architecture-diagram-2026-09-06.md`](docs/architecture-diagram-2026-09-06.md).
 - **Demo video: not recorded.** A text shot-list draft exists in
   [`docs/DEVPOST-DRAFT.md`](docs/DEVPOST-DRAFT.md).
 
