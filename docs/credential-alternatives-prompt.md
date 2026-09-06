@@ -1,5 +1,20 @@
 # Research prompt — compliant model access for our application's eval harness
 
+> **HISTORICAL / SUPERSEDED — annotated 2026-09-05; do not act on this
+> prompt.** It was written 2026-09-04, when the application's eval
+> harness still — non-compliantly — rode the Z.AI Anthropic-compatible
+> endpoint via `ANTHROPIC_BASE_URL` / `ANTHROPIC_API_KEY`. That
+> application credential path has since been **removed by policy**
+> (human ruling 2026-09-04; see the `agents/model.py` docstring): the
+> Z.AI credential is reserved exclusively for Claude Code, and the
+> application reads `GROQ_API_KEY` only (Groq, `openai/gpt-oss-120b`).
+> Everything below the `---` is preserved verbatim as the historical
+> artifact. In particular, "exactly how the non-compliant usage works
+> today" up top, the section "The problem — how the LLM is accessed
+> today (non-compliant)", and its `AnthropicModel` snippet presented as
+> the then-current `agents/model.py` all describe the 2026-09-04 state,
+> not the present wiring.
+
 Copy everything below the line into Claude Sonnet (with web search
 enabled). It contains everything needed: what we're building, the tech
 stack, exactly how the non-compliant usage works today, and the
