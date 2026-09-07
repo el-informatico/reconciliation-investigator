@@ -187,7 +187,13 @@ fix**; reverting the uncommitted work would reintroduce all four.
 CONTRIBUTING* anywhere, no `.github/`, no commit template
 (`git config commit.template` unset; no `.gitmessage*`).
 `scripts/hooks/pre-commit` execs only the segregation guard — nothing
-inspects commit messages. The convention exists as prose in
+inspects commit messages.
+  [CORRECTED 2026-09-06, later commits — both halves now inverted:
+  980c1af added scripts/hooks/commit-msg (something DOES inspect
+  commit messages), and e5a2ef0 (D-2026-09-06-03) replaced the exec
+  with sequential aggregation of the segregation and sensitive-content
+  guards (pre-commit no longer execs only the segregation guard).]
+The convention exists as prose in
 currently-UNTRACKED stage-2/3 reports (git-stage2-final-report §7,
 git-stage3-pending-work-audit:275, git-stage3-final-report §6,
 commit-history-audit §1.3a) and nowhere in `agent-memory/decisions.md`

@@ -278,8 +278,9 @@ retry/OTel/infrastructure-token figures.
 
 ## 9. Offline test suite
 
-Most recent count on record: **218 passed** (offline suite re-executed
-2026-09-06, `uv run --locked pytest -q`, before the diagram/docs commit).
+Most recent count on record: **251 passed** (offline suite re-executed
+2026-09-06, `uv run --locked pytest -q`, with the sensitive-content
+guard regression tests).
 Lineage: 132 → 150 with the leak fix's 18 new tests
 (`docs/eval-ground-truth-leak-fix-2026-09-05.md` §5) → 155 (clean-run
 task, `docs/clean-5case-validation-2026-09-05.md` §1d) → 190 (human-gate
@@ -287,7 +288,9 @@ task, `docs/human-gate-e2e-validation-2026-09-05.md` §8) → 216
 (rejected-call diagnostics + loopback web tests,
 `docs/draft-rejection-diagnostics-2026-09-06.md` §7) → 217
 (approver-attribution regression test, `docs/p0c-closeout-2026-09-06.md`
-§5) → 218 (+ the diagram-sync test, this commit). (218 MEASURED 2026-09-06;
+§5) → 218 (+ the diagram-sync test) → 251 (+ the 33 sensitive-content
+guard regression tests, `tests/test_sensitive_content_guards.py`, the
+guard-hardening commit). (251 MEASURED 2026-09-06;
 lineage DOCUMENTED per the cited docs)
 
 ## 10. Source map

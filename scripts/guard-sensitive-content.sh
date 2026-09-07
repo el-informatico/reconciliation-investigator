@@ -23,9 +23,10 @@
 # back verbatim.
 #
 # EXIT CODES: Violation => exit 1. Guard-internal failure (no git dir,
-# or tokens file present but unreadable) => exit 2, failing closed per
-# design. Clean, or check disabled (tokens file absent/empty) =>
-# exit 0 — fail-open bootstrap per the ares-launch.sh governor
+# mktemp failure, or tokens path present but not a readable regular
+# file — chmod 000, a directory, a dangling symlink) => exit 2, failing
+# closed per design. Clean, or check disabled (tokens file absent/empty)
+# => exit 0 — fail-open bootstrap per the ares-launch.sh governor
 # precedent.
 #
 # HONEST BOUNDARY: `git commit --no-verify` bypasses it (it binds every
@@ -44,12 +45,12 @@ GIT_DIR="$(git rev-parse --absolute-git-dir)" || {
 }
 TOKENS="$GIT_DIR/sensitive-tokens"
 
-if [ ! -e "$TOKENS" ]; then
+if [ ! -e "$TOKENS" ] && [ ! -L "$TOKENS" ]; then
   echo "guard-sensitive-content: no sensitive-tokens list in the git dir; check disabled" >&2
   exit 0
 fi
-if [ ! -r "$TOKENS" ]; then
-  echo "guard-sensitive-content: sensitive-tokens exists but is unreadable; failing closed per design" >&2
+if [ ! -f "$TOKENS" ] || [ ! -r "$TOKENS" ]; then
+  echo "guard-sensitive-content: sensitive-tokens exists but is not a readable file; failing closed per design" >&2
   exit 2
 fi
 
@@ -72,9 +73,15 @@ fi
 fail=0
 blocked=0
 while IFS= read -r -d '' f; do
-  # Added lines only; skip the +++ header line; strip the leading '+'.
+  # Added lines only, taken from INSIDE the hunks (everything after the
+  # first @@ line — this diff is per-file, so exactly one +++ b/<path>
+  # header set exists and it always precedes the first hunk): the
+  # header can never be mistaken for content — and genuine added lines
+  # that BEGIN with '+' (quoted diff text: content "++ token" reaches
+  # the diff as "+++ token", exactly header-shaped) are still scanned.
+  # Strip exactly the leading '+' from each.
   added="$(git diff --cached -U0 -- "$f" \
-           | awk '/^\+\+\+ /{next} /^\+/{sub(/^./,""); print}')"
+           | awk '/^@@/{inhunk=1; next} inhunk && /^\+/{sub(/^./,""); print}')"
   [ -n "$added" ] || continue
   if printf '%s\n' "$added" | grep -aFqf "$PATTERNS"; then
     echo "guard-sensitive-content: BLOCKED — staged additions in $f" >&2

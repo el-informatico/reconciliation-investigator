@@ -45,8 +45,10 @@ hostnames.
 - Completion summaries, commit messages, and review replies use
   tokenized/category references ("sibling-project names", "home
   paths"), never the raw strings.
-- The filename classes `*-privacy-audit-*.md`,
-  `*-rewrite-execution-plan-*.md`, `*-backup-chain-investigation-*.md`
+- The filename classes `*privacy-audit-*.md`,
+  `*rewrite-execution-plan-*.md`, `*backup-chain-investigation-*.md`
+  (prefix-optional, so both `agent-memory-privacy-audit-…` and the
+  unprefixed `backup-chain-investigation-…` real-name shapes match)
   under `docs/` and `agent-memory/` are gitignored as a safety net; a
   deliberately tokenized document of one of those classes that must be
   tracked needs `git add -f`.
@@ -65,8 +67,10 @@ message. The list lives at `<git-dir>/sensitive-tokens` — literal
 fixed strings, one per line, never tracked (a reference copy is kept
 outside the repository beside the relocated planning documents; reseed
 with a plain copy after a fresh clone). Absent or empty list = check
-disabled (fail-open); present but unreadable = commit refused (fail
-closed). Bypassable only the same ways as the other hooks
+disabled (fail-open); present but not a readable regular file (chmod
+000, a directory at the path, a dangling symlink) = commit refused
+(fail closed), in both the pre-commit guard and commit-msg. Bypassable
+only the same ways as the other hooks
 (`--no-verify` — don't).
 
 ## Commit style

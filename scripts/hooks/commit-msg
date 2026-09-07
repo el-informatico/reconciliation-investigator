@@ -15,7 +15,12 @@
 # not subject-matter mentions: a subject like "remove the Anthropic
 # path" and a human Co-Authored-By trailer must keep passing. The
 # token check never prints the token that matched, only that one did;
-# it is disabled (fail-open) when no local token list exists.
+# it is disabled (fail-open) when no local token list exists or it is
+# empty (bootstrap precedent, CONTRIBUTING.md); a list that exists but
+# is not a readable regular file (chmod 000, a directory at the path, a
+# dangling symlink) REFUSES the commit — fail-closed parity with
+# scripts/guard-sensitive-content.sh, per CONTRIBUTING.md's "present
+# but unreadable = commit refused (fail closed)".
 # Rule text and rationale: CONTRIBUTING.md at the repo root.
 
 set -u
@@ -38,12 +43,23 @@ fi
 # history, so the same rule as staged content applies (list lives in
 # the git dir, never tracked; see scripts/guard-sensitive-content.sh).
 TOKENS="$(git rev-parse --absolute-git-dir)/sensitive-tokens"
+if [ -e "$TOKENS" ] || [ -L "$TOKENS" ]; then
+  if [ ! -f "$TOKENS" ] || [ ! -r "$TOKENS" ]; then
+    echo "commit-msg: sensitive-tokens exists but is not a readable file; failing closed per design" >&2
+    exit 2
+  fi
+fi
 if [ -s "$TOKENS" ] && [ -r "$TOKENS" ]; then
-  PATTERNS="$(mktemp)" || exit 2
+  PATTERNS="$(mktemp)" || {
+    echo "commit-msg: mktemp failed; failing closed per design" >&2
+    exit 2
+  }
   trap 'rm -f "$PATTERNS"' EXIT
-  if tr -d '\r' < "$TOKENS" | sed -e '/^[[:space:]]*$/d' > "$PATTERNS" \
-     && [ -s "$PATTERNS" ] \
-     && grep -aFqf "$PATTERNS" "$MSG_FILE"; then
+  if ! tr -d '\r' < "$TOKENS" | sed -e '/^[[:space:]]*$/d' > "$PATTERNS"; then
+    echo "commit-msg: cannot sanitize token list; failing closed per design" >&2
+    exit 2
+  fi
+  if [ -s "$PATTERNS" ] && grep -aFqf "$PATTERNS" "$MSG_FILE"; then
     echo "commit-msg: BLOCKED — the commit message contains a configured sensitive token." >&2
     echo "  Use a tokenized/category reference instead, then re-commit; do not" >&2
     echo "  use --no-verify. Rule: CONTRIBUTING.md; list mechanism:" >&2

@@ -41,10 +41,14 @@ runtime/
 # docs/SENSITIVE-PLANNING-DOCS-RELOCATED.md). These patterns exist so
 # an accidentally recreated file of these classes cannot be staged by a
 # blanket `git add -A`; a deliberately tokenized document that must be
-# tracked despite matching needs `git add -f`.
-docs/*-privacy-audit-*.md
-docs/*-rewrite-execution-plan-*.md
-docs/*-backup-chain-investigation-*.md
-agent-memory/*-privacy-audit-*.md
-agent-memory/*-rewrite-execution-plan-*.md
-agent-memory/*-backup-chain-investigation-*.md
+# tracked despite matching needs `git add -f`. The globs are
+# prefix-OPTIONAL on purpose: the real relocated names are mixed — the
+# privacy-audit and rewrite-plan docs carry a leading project-area
+# prefix, the backup-chain doc carries none (which the earlier
+# '*-backup-chain-...' form never matched — fixed 2026-09-06).
+docs/*privacy-audit-*.md
+docs/*rewrite-execution-plan-*.md
+docs/*backup-chain-investigation-*.md
+agent-memory/*privacy-audit-*.md
+agent-memory/*rewrite-execution-plan-*.md
+agent-memory/*backup-chain-investigation-*.md

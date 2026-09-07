@@ -191,7 +191,7 @@ reconciliation-investigator/
 │   ├── gemini_judge_canary.py   # single-case canary (same split)
 │   ├── groq_parsing_retry_canary.py
 │   └── token_canary.py
-├── tests/                       # 19 offline test files (hermetic, no API keys)
+├── tests/                       # 20 offline test files (hermetic, no API keys)
 ├── scripts/
 │   ├── verify.sh                # authoritative end-to-end evidence
 │   ├── guard-segregation-of-duties.sh
