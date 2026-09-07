@@ -41,6 +41,15 @@
   credits, no emoji signatures); subject-matter mentions of AI tools
   (e.g. the credential policy) are fine. Canonical rule and rationale:
   CONTRIBUTING.md; mechanical gate: `scripts/hooks/commit-msg`.
+- Sensitive-content planning outputs are written OUTSIDE the repository
+  working tree from the start — never inside it, even temporarily, even
+  untracked. Any deliverable that must quote raw sensitive content
+  (local filesystem paths, sibling-project identifiers, hostnames,
+  credentials) for audit/planning purposes lives outside the working
+  tree, and completion summaries and replies use tokenized category
+  references, never the raw strings. Canonical rule and rationale:
+  CONTRIBUTING.md; mechanical gate: `scripts/guard-sensitive-content.sh`
+  (pre-commit, via `scripts/hooks/pre-commit`).
 
 ## Language Policy
 

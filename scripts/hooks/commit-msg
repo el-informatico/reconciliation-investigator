@@ -6,11 +6,16 @@
 # Wired like pre-commit via: git config core.hooksPath scripts/hooks
 # (git silently ignores a non-executable hook — keep the exec bit;
 # verify.sh step 2 checks pre-commit's bit only, not this one's).
+# Extended 2026-09-06 (D-2026-09-06-03): also rejects a message that
+# contains a configured sensitive token (same local list as
+# scripts/guard-sensitive-content.sh — never tracked).
 #
 # Honest limits: `git commit --no-verify` bypasses it, and it checks
 # only the message file handed to it. It blocks attribution SHAPES,
 # not subject-matter mentions: a subject like "remove the Anthropic
-# path" and a human Co-Authored-By trailer must keep passing.
+# path" and a human Co-Authored-By trailer must keep passing. The
+# token check never prints the token that matched, only that one did;
+# it is disabled (fail-open) when no local token list exists.
 # Rule text and rationale: CONTRIBUTING.md at the repo root.
 
 set -u
@@ -27,5 +32,23 @@ if grep -inE "^[[:space:]]*co-authored-by:.*${VENDOR}" "$MSG_FILE" \
   echo "  2026-09-05). Rule: CONTRIBUTING.md. Remove the attribution line(s)" >&2
   echo "  and re-commit; do not use --no-verify." >&2
   exit 1
+fi
+
+# Sensitive tokens in the message itself — the message is permanent
+# history, so the same rule as staged content applies (list lives in
+# the git dir, never tracked; see scripts/guard-sensitive-content.sh).
+TOKENS="$(git rev-parse --absolute-git-dir)/sensitive-tokens"
+if [ -s "$TOKENS" ] && [ -r "$TOKENS" ]; then
+  PATTERNS="$(mktemp)" || exit 2
+  trap 'rm -f "$PATTERNS"' EXIT
+  if tr -d '\r' < "$TOKENS" | sed -e '/^[[:space:]]*$/d' > "$PATTERNS" \
+     && [ -s "$PATTERNS" ] \
+     && grep -aFqf "$PATTERNS" "$MSG_FILE"; then
+    echo "commit-msg: BLOCKED — the commit message contains a configured sensitive token." >&2
+    echo "  Use a tokenized/category reference instead, then re-commit; do not" >&2
+    echo "  use --no-verify. Rule: CONTRIBUTING.md; list mechanism:" >&2
+    echo "  scripts/guard-sensitive-content.sh" >&2
+    exit 1
+  fi
 fi
 exit 0

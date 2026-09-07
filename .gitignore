@@ -35,3 +35,16 @@ __pycache__/
 # Runtime stores (EVAL_MODE=1): drafts, tickets, correction overrides,
 # audit log, consumed tokens — application state, not source.
 runtime/
+
+# Sensitive planning documents (defense-in-depth ONLY — the real files
+# live outside the repository tree; see
+# docs/SENSITIVE-PLANNING-DOCS-RELOCATED.md). These patterns exist so
+# an accidentally recreated file of these classes cannot be staged by a
+# blanket `git add -A`; a deliberately tokenized document that must be
+# tracked despite matching needs `git add -f`.
+docs/*-privacy-audit-*.md
+docs/*-rewrite-execution-plan-*.md
+docs/*-backup-chain-investigation-*.md
+agent-memory/*-privacy-audit-*.md
+agent-memory/*-rewrite-execution-plan-*.md
+agent-memory/*-backup-chain-investigation-*.md

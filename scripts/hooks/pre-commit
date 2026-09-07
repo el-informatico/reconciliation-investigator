@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
-# Pre-commit gate (Ares V2 python-strands profile): refuses a commit
-# whose working tree violates segregation of duties. Wired at bootstrap
-# via:  git config core.hooksPath scripts/hooks
+# Pre-commit gate (Ares V2 python-strands profile): runs the commit-time
+# guards and refuses the commit when any of them fails:
+#   1. segregation of duties (working-tree tripwire)
+#   2. sensitive-content tokens in staged added lines (local list —
+#      disabled when the list is absent; see
+#      scripts/guard-sensitive-content.sh)
+# Wired at bootstrap via:  git config core.hooksPath scripts/hooks
 #
-# Honest limits: `git commit --no-verify` bypasses this hook, and it
-# checks the working tree (not the commit object itself). It is a
-# tripwire, not containment — see
-# scripts/guard-segregation-of-duties.sh for the full boundary note.
+# Honest limits: `git commit --no-verify` bypasses these hooks; the
+# segregation check looks at the working tree (not the commit object
+# itself), and the sensitive-content check only at staged added lines.
+# They are tripwires, not containment — see each guard's header for
+# the full boundary note.
 set -u
 ROOT="$(git rev-parse --show-toplevel)" || {
   echo "pre-commit: cannot determine repo root" >&2
   exit 1
 }
-exec bash "$ROOT/scripts/guard-segregation-of-duties.sh" "$ROOT"
+rc=0
+bash "$ROOT/scripts/guard-segregation-of-duties.sh" "$ROOT" || rc=1
+bash "$ROOT/scripts/guard-sensitive-content.sh" || rc=1
+exit "$rc"

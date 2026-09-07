@@ -28,6 +28,47 @@ attribution pattern. It is wired through the same
 segregation guard and is bypassable only the same ways (`--no-verify`
 — don't).
 
+## Sensitive content: raw strings never enter new history
+
+Commit messages, staged additions, and documents in the repository
+tree must not introduce raw sensitive content: local filesystem paths
+(user-home and Windows-mount paths), sibling-project identifiers, or
+hostnames.
+
+- Planning/audit documents that must quote such strings by structural
+  necessity are written OUTSIDE the repository working tree from the
+  moment they are created — never inside the repo, even temporarily,
+  even untracked (one `git add -A` away from history). On 2026-09-06
+  the three planning documents of the privacy-audit effort were
+  relocated accordingly; see
+  docs/SENSITIVE-PLANNING-DOCS-RELOCATED.md.
+- Completion summaries, commit messages, and review replies use
+  tokenized/category references ("sibling-project names", "home
+  paths"), never the raw strings.
+- The filename classes `*-privacy-audit-*.md`,
+  `*-rewrite-execution-plan-*.md`, `*-backup-chain-investigation-*.md`
+  under `docs/` and `agent-memory/` are gitignored as a safety net; a
+  deliberately tokenized document of one of those classes that must be
+  tracked needs `git add -f`.
+
+**Why:** this repository is intended for a public flip. Raw strings of
+these classes already exist in frozen tracked evidence under the
+annotate-don't-erase rule (D-2026-09-05-01), and a scoped history
+rewrite addresses those separately — this rule's job is that no NEW
+occurrence enters history.
+
+**Mechanical gate:** `scripts/guard-sensitive-content.sh` (invoked by
+`scripts/hooks/pre-commit`) fails a commit whose staged ADDED lines
+contain any token from a locally configured list, and
+`scripts/hooks/commit-msg` applies the same list to the commit
+message. The list lives at `<git-dir>/sensitive-tokens` — literal
+fixed strings, one per line, never tracked (a reference copy is kept
+outside the repository beside the relocated planning documents; reseed
+with a plain copy after a fresh clone). Absent or empty list = check
+disabled (fail-open); present but unreadable = commit refused (fail
+closed). Bypassable only the same ways as the other hooks
+(`--no-verify` — don't).
+
 ## Commit style
 
 Match the established history: short descriptive subject (~50-72
