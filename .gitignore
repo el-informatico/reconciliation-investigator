@@ -52,3 +52,9 @@ docs/*backup-chain-investigation-*.md
 agent-memory/*privacy-audit-*.md
 agent-memory/*rewrite-execution-plan-*.md
 agent-memory/*backup-chain-investigation-*.md
+
+# agent-memory/ as a whole: local working memory only — excised from
+# repository history by the 2026-09-07 rewrite; never track it again.
+# (The three class patterns above are retained for their documented
+# defense-in-depth meaning; this rule supersedes them in scope.)
+agent-memory/
