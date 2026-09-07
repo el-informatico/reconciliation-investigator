@@ -194,7 +194,7 @@ friendly message, exit 0.
 Final-count attribution (CALCULATED from measured values): 216 = 190 baseline
 + 21 (this task's file) + 5 (uncommitted additions to
 `tests/test_approval_surface.py` — 126 insertions vs HEAD — authored by a
-CONCURRENT session in this repo, not this task; HEAD moved to `4f81e7d`
+CONCURRENT session in this repo, not this task; HEAD moved to `f836966`
 mid-session the same way. This task authored no `test_approval_surface.py`
 change). All 216 pass: this change is compatible with that concurrent work.
 
@@ -231,7 +231,7 @@ authorization for this session) and the repo's gate-before-commit practice.
 Verified from the implementing seat (OBSERVED): `git diff --cached` is empty
 (0 staged paths); this task's surface is exactly `M tools/case_management.py`
 + three untracked files (`scripts/show_rejected_calls.py`,
-`tests/test_rejected_call_diagnostics.py`, this doc). HEAD (`4f81e7d` at time
+`tests/test_rejected_call_diagnostics.py`, this doc). HEAD (`f836966` at time
 of writing) advanced via a concurrent session, not this one — no commit,
 stage, or push was issued from this session. The repo's commit-msg hook
 rejects AI-attribution trailers; irrelevant here because nothing was

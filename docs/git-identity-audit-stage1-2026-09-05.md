@@ -1,4 +1,10 @@
 # Git/GitHub identity audit — Stage 1, read-only (2026-09-05)
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
+
+> REDACTED 2026-09-07 (privacy pass): sibling-project names and
+> out-of-repo local paths in this report were replaced with neutral tokens
+> ([SIBLING-A]…[SIBLING-J], ~) before publication; originals preserved in
+> the author's private pre-rewrite bundle.
 
 **Status: READ-ONLY STAGE 1 DIAGNOSTIC. No history rewrite, no commit/amend/
 rebase, no LICENSE, no README change, no GitHub repository, no remote, no

@@ -1,4 +1,5 @@
 # Groq parse-retry ACTIVE — 5-case validation (2026-09-05)
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 **Status: COMPLETE — 5/5 cases rc=0; the `GroqParsingFailedRetryStrategy` fired LIVE twice
 and recovered twice; No retry-related regressions were observed on any other axis → GO WITH CAVEAT.** (MEASURED)

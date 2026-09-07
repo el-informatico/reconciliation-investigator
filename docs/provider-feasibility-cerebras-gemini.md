@@ -1,4 +1,10 @@
 # Provider feasibility report — Cerebras GPT-OSS-120B & Gemini 3.1 Flash-Lite
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
+
+> REDACTED 2026-09-07 (privacy pass): sibling-project names and
+> out-of-repo local paths in this report were replaced with neutral tokens
+> ([SIBLING-A]…[SIBLING-J], ~) before publication; originals preserved in
+> the author's private pre-rewrite bundle.
 
 **Date:** 2026-09-04 · **Status:** investigation complete; NO-GO / CONDITIONAL GO issued below
 **Scope:** READ-ONLY investigation of the target repo + authorized live probes only. The
@@ -234,7 +240,7 @@ Gemini 3.x models attach a `thoughtSignature` to function-call parts and **requi
 it to be replayed verbatim**; dropping it is a hard 400 (captured both via raw REST
 and inside strands' OpenAI adapter). The native `google-genai` SDK carries the full
 part structure, which is why `GeminiModel` works. This is the same *class* of trap
-as the Groq `reasoning_content` replay issue from the gateway's lessons — and it is
+as the Groq `reasoning_content` replay issue from the [SIBLING-B]'s lessons — and it is
 now **de-risked by evidence** for the native path.
 
 ### 4.5 Effective limits for [SIBLING-F]'s credential
@@ -264,7 +270,7 @@ now **de-risked by evidence** for the native path.
 
 1. **Provenance of 20 RPD:** a verbatim Google 429 `QuotaFailure` captured live on
    **2026-08-22** in the *[SIBLING-B]* project's evidence
-   (`agent-memory/evidence/[SIBLING-B-INTERNAL]model-loop/[SIBLING-B-INTERNAL]model-loop-live-smoke-run3.txt`
+   (`agent-memory/evidence/[SIBLING-B-INTERNAL]-model-loop/[SIBLING-B-INTERNAL]-model-loop-live-smoke-run3.txt`
    lines 170/211, re-verified byte-exact during this investigation):
    `quotaId GenerateRequestsPerDayPerProjectPerModel-FreeTier`, **model
    `gemini-3.6-flash`**, `quotaValue 20`.
@@ -452,7 +458,7 @@ explicit human approval of both categories.
    response; ~20 lines) — turns the next preflight's ±50% estimate into a
    measurement.
 7. **Rollback** — single `git revert` of the swap commit; `.env` key removal
-   optional; Groq wiring recoverable from history (`82d8271` lineage).
+   optional; Groq wiring recoverable from history (`f1caf38` lineage).
 
 **Cerebras contingent plan (only if the human unblocks billing — outside this
 task's permissions):** `agents/model.py` two-value swap (`base_url=
@@ -564,7 +570,7 @@ STRANDS gemini-native (GeminiModel + google-genai 2.22.0): wall_ms=5489.5
 - Local prior evidence: `agent-memory/groq-preflight-2026-09-04.md`,
   `agent-memory/gemini-feasibility-2026-09-04.md`,
   `agent-memory/gemini-quota-provenance-2026-09-04.md`,
-  [SIBLING-B] `[SIBLING-B-INTERNAL]model-loop-live-smoke-run3.txt:170,211`,
+  [SIBLING-B] `[SIBLING-B-INTERNAL]-model-loop-live-smoke-run3.txt:170,211`,
   ~/scratch-tests `validation-report.md` §2 (2026-08-28, Spanish-language bench; only
   its English error strings quoted here).
 

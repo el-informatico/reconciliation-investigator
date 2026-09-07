@@ -1,4 +1,5 @@
 # Dissent-review §5 — verbatim reproduction and per-item verification
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 Date: 2026-09-05 · Mode: READ-ONLY follow-up (this file is the only artifact
 created; no other file edited, created, or deleted; nothing staged,
@@ -269,7 +270,7 @@ DR:515–519).
 | 5 | The paired draft | `drafts.jsonl:20` `DRF-beac5cd8cb28` @ **17:21:08.243202Z**, 9.27 s before the ticket, which references this draft id | `runtime/drafts.jsonl` |
 | 6 | No case-4 work in any attempt window | No C-1004 ticket exists between 14:56:44Z (`TCK-0ca8551fc455`, line 15) and 17:21:17Z; exactly **8** C-1004 tickets exist overall (lines 7, 14, 15, 31, 34, 47, 53, 58) — which also independently confirms A:392's "all 8 C-1004 tickets" | C-1004 grep over `tickets.jsonl` |
 | 7 | run4's own window contains no case-4 artifact | Tickets inside the window are lines 25–27 (16:28:07 / 16:36:57 / 16:47:25, the last a `C-1003` case); none is C-1004; the 16:47:25 c3 ticket sits 5m29s before the SIGINT — the dissent's "case-4's detector may have started in the 5.5 minutes before its SIGINT" reconciles exactly | timeline extraction |
-| 8 | Independent triangulation | The sequential-driver commit `ee18e73` lands 43 s after run4's death (16:53:37Z) — the session had moved on to building `run_sequential.py` before the successor execution's first ticket (16:55:13Z) | L1, via `git log` |
+| 8 | Independent triangulation | The sequential-driver commit `af90ddc` lands 43 s after run4's death (16:53:37Z) — the session had moved on to building `run_sequential.py` before the successor execution's first ticket (16:55:13Z) | L1, via `git log` |
 
 **Correct attribution (CALCULATED from premises 1–8, all MEASURED above):**
 the execution that wrote tickets 28–31 began producing store artifacts at
@@ -307,7 +308,7 @@ Specifically (L3 surface sweep + L1 figure-provenance):
   ticket-store-only"; "4th archived / 5th overall") are count statements
   about the pass's *existence*, which is DIRECT — they survive the
   re-attribution unchanged.
-- Nothing is on the public remote: `main` = `origin/main` = `c5f5e13`, and
+- Nothing is on the public remote: `main` = `origin/main` = `ac1ba3a`, and
   all three case-4 reports are untracked; no commit on any ref references
   them.
 
@@ -399,7 +400,7 @@ A→B supersession path.
 
 A:91 (§1b row 1):
 
-> | 1 | 09-04 14:04 | verify.sh step-6 Exp run 1 (16%) | GLM / judges unwired | present | Ran (trajectory existed); all judged rows 0.00 on judge wiring; **classifier verdict NOT preserved** — UNKNOWN | `verify-full-2026-09-04.txt:502`; wiring fixed after, in `2765e98` |
+> | 1 | 09-04 14:04 | verify.sh step-6 Exp run 1 (16%) | GLM / judges unwired | present | Ran (trajectory existed); all judged rows 0.00 on judge wiring; **classifier verdict NOT preserved** — UNKNOWN | `verify-full-2026-09-04.txt:502`; wiring fixed after, in `cf58ddf` |
 
 B:82 (§1b row 2 — same 14:04Z run; B's table has one extra leading row, a
 ~13:18 bootstrap, so B's row numbers run one ahead of A's from here):
@@ -525,7 +526,7 @@ historical record? (per item)
 | impl-diff:724 `+EVALS_RUN4_EXIT=130`; siblings at 310/448/586; file mtime 17:12:19Z (§2c 3) | MEASURED | grep + `stat` (main session) |
 | Ticket progression 28–31 (16:55:13/17:04:18/17:13:49/17:21:17.514059); draft `DRF-beac5cd8cb28` @17:21:08.243202 (§2c 4–5) | MEASURED | Full timeline extraction of `tickets.jsonl` (59 rows) + `drafts.jsonl` grep (main session) |
 | No C-1004 ticket 14:56:44→17:21:17; exactly 8 C-1004 tickets; run4 window tickets 25–27 incl. C-1003 @16:47:25 (§2c 6–7) | MEASURED | C-1004 grep + timeline extraction (main session) |
-| Sequential commit `ee18e73` at 16:53:37Z, 43 s after run4 death (§2c 8) | MEASURED | `git log` (L1, in-task lane) |
+| Sequential commit `af90ddc` at 16:53:37Z, 43 s after run4 death (§2c 8) | MEASURED | `git log` (L1, in-task lane) |
 | The 17:21 pass belongs to a subsequent unlogged execution (§2c conclusion) | CALCULATED | Derived here from MEASURED premises 1–8; matches DR §5b (which tagged it INFERRED) |
 | First progression ticket postdates run4 death by 2m19.3s; pass by 28m22.9s (§2) | CALCULATED | Arithmetic on MEASURED timestamps; matches DR's "2.3 minutes" |
 | No headline figure depends on run4; README figureless; no index/pitch/submission docs; nothing public (§2d) | MEASURED | L3 surface sweep + L1 figure provenance (in-task lanes); README quote read at `README.md:99–103` |
@@ -550,7 +551,7 @@ historical record? (per item)
   files (`evals/run_evals.py`, `tools/legacy_system.py`,
   `tools/modern_system.py`, `tools/seed_data.py`, `tools/transactions.py`;
   all pre-existing modifications, untouched here) and 40 untracked entries;
-  HEAD `c5f5e1326a13f26835ec6afc4a4c6bead5d0772b`. AFTER (closing
+  HEAD `ac1ba3a394e7afc85980e49615a9a720aa8b5b4f`. AFTER (closing
   verification command): 46 lines — the identical 45 plus exactly one new
   untracked line —
   `?? docs/case4-dissent-section5-verbatim-and-verification-2026-09-05.md`

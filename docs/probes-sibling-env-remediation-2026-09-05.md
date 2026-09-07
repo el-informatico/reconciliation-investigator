@@ -1,4 +1,10 @@
 # probes/ sibling-.env default remediation — 2026-09-05
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
+
+> REDACTED 2026-09-07 (privacy pass): sibling-project names and
+> out-of-repo local paths in this report were replaced with neutral tokens
+> ([SIBLING-A]…[SIBLING-J], ~) before publication; originals preserved in
+> the author's private pre-rewrite bundle.
 
 Status: COMPLETE (reviewer ACCEPT, round 2 — §9). Human-ruled
 remediation; architect-gated Tier A PROCEED; all verification offline.
@@ -18,7 +24,7 @@ Constraint compliance (all MEASURED/OBSERVED in this session):
   end-to-end: step 6 is the live 5-case Groq run; probes are also never
   exercised by verify.sh).
 - No commits, staging, or pushes: `git diff --cached` empty throughout,
-  HEAD unchanged at c5f5e13 (§7).
+  HEAD unchanged at ac1ba3a (§7).
 - Secrets: none read, none printed, none written. The reviewer verified
   `.env`-membership claims by name-presence greps only (values never read).
 
@@ -30,7 +36,7 @@ construction (MEASURED, §5).
 
 Justification, tied to the probes' coded purpose (all OBSERVED in source):
 1. `probe_groq.py` exists to compare TWO external credential files
-   (`--env-tag [SIBLING-A]|gateway`; pre-fix docstring named both sibling
+   (`--env-tag [SIBLING-A]|[SIBLING-B]`; pre-fix docstring named both sibling
    paths). `--env-file` selects which environment is under test — no
    single default can be semantically correct.
 2. `probe_cerebras.py` / `probe_strands.py --provider cerebras` read
@@ -99,14 +105,14 @@ index f0df1d7..a22e9af 100644
 -uv run --locked python probes/probe_cerebras.py
 -uv run --locked python probes/probe_gemini.py
 -uv run --locked python probes/probe_groq.py --env-file ~/projects/[SIBLING-A]/.env --env-tag [SIBLING-A]
--uv run --locked python probes/probe_groq.py --env-file ~/projects/[SIBLING-B]/.env      --env-tag gateway
+-uv run --locked python probes/probe_groq.py --env-file ~/projects/[SIBLING-B]/.env      --env-tag [SIBLING-B]
 -uv run --locked python probes/probe_strands.py --provider cerebras
 -uv run --locked python probes/probe_strands.py --provider gemini-compat
 -uv run --frozen --with google-genai python probes/probe_strands.py --provider gemini-native
 +uv run --locked python probes/probe_cerebras.py --env-file /path/to/cerebras.env
 +uv run --locked python probes/probe_gemini.py  --env-file /path/to/gemini.env
 +uv run --locked python probes/probe_groq.py    --env-file /path/to/first.env  --env-tag [SIBLING-A]
-+uv run --locked python probes/probe_groq.py    --env-file /path/to/second.env --env-tag gateway
++uv run --locked python probes/probe_groq.py    --env-file /path/to/second.env --env-tag [SIBLING-B]
 +uv run --locked python probes/probe_strands.py --provider cerebras      --env-file /path/to/cerebras.env
 +uv run --locked python probes/probe_strands.py --provider gemini-compat --env-file /path/to/gemini.env
 +uv run --frozen --with google-genai python probes/probe_strands.py --provider gemini-native --env-file /path/to/gemini.env
@@ -186,9 +192,9 @@ index 683f03d..b04ccd7 100644
  response metadata says otherwise — key values are never compared):
  
 -  --env-file ~/projects/[SIBLING-A]/.env  --env-tag [SIBLING-A]
--  --env-file ~/projects/[SIBLING-B]/.env     --env-tag gateway
+-  --env-file ~/projects/[SIBLING-B]/.env     --env-tag [SIBLING-B]
 +  --env-file /path/to/first/.env   --env-tag [SIBLING-A]
-+  --env-file /path/to/second/.env  --env-tag gateway
++  --env-file /path/to/second/.env  --env-tag [SIBLING-B]
  
  Phases and per-environment call budget (<=4 requests total):
    1. models.list                      (auth + openai/gpt-oss-120b presence; sanitized boolean)
@@ -210,7 +216,7 @@ index 683f03d..b04ccd7 100644
 +    ap.add_argument("--env-file", required=True,
 +                    help=".env file to read GROQ_API_KEY from (by name only; required — no default)")
      ap.add_argument("--env-tag", required=True,
-                     choices=["[SIBLING-A]", "gateway"],
+                     choices=["[SIBLING-A]", "[SIBLING-B]"],
                      help="label for evidence files and summaries")
 diff --git a/probes/probe_strands.py b/probes/probe_strands.py
 index 8a27298..1895b0b 100644
@@ -257,7 +263,7 @@ index 8a27298..1895b0b 100644
 ```
 
 Notes on deliberate non-changes in the diff:
-- `probe_groq.py --env-tag` choices `["[SIBLING-A]", "gateway"]` kept:
+- `probe_groq.py --env-tag` choices `["[SIBLING-A]", "[SIBLING-B]"]` kept:
   evidence-file labels, not paths (disposition: keep).
 - `probe_strands.py`'s two `--env-file`-omitting usage hints (docstring
   provider table, `run via:` print) were caught by the adversarial
@@ -279,7 +285,7 @@ Before (key passages, OBSERVED pre-edit):
 > uv run --locked python probes/probe_cerebras.py
 > uv run --locked python probes/probe_gemini.py
 > uv run --locked python probes/probe_groq.py --env-file ~/projects/[SIBLING-A]/.env --env-tag [SIBLING-A]
-> uv run --locked python probes/probe_groq.py --env-file ~/projects/[SIBLING-B]/.env      --env-tag gateway
+> uv run --locked python probes/probe_groq.py --env-file ~/projects/[SIBLING-B]/.env      --env-tag [SIBLING-B]
 > uv run --locked python probes/probe_strands.py --provider cerebras
 > uv run --locked python probes/probe_strands.py --provider gemini-compat
 > uv run --frozen --with google-genai python probes/probe_strands.py --provider gemini-native
@@ -349,7 +355,7 @@ REPORTED-ONLY — out of this task's safe scope:
   `groq-preflight-*.md` — authorization provenance; append-only ledger and
   read-only notes; untouched (superseded instead via §6).
 - `agent-memory/evidence/**` (frozen run records incl.
-  `groq-probe-[SIBLING-A]-*.txt`, `groq-probe-gateway-*.txt`, 385
+  `groq-probe-[SIBLING-A]-*.txt`, `groq-probe-[SIBLING-B]-*.txt`, 385
   `~/.local/...` traceback frames) — frozen evidence; untouched.
 
 Zero hits for all patterns in: root `README.md`, `CLAUDE.md`,
@@ -416,7 +422,7 @@ After: identical to before, plus exactly:
 - New (untracked): `docs/probes-sibling-env-remediation-2026-09-05.md`
   (this file).
 - Nothing staged (`git diff --cached` empty), nothing committed (HEAD
-  unchanged at c5f5e13), nothing pushed (no network git operations).
+  unchanged at ac1ba3a), nothing pushed (no network git operations).
 
 ## 8. Claim classification
 

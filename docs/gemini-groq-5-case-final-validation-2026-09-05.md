@@ -1,4 +1,5 @@
 # Gemini-judge / Groq-agent 5-case FINAL validation — 2026-09-05
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 Controlled benchmark, ONE complete execution of the configured five cases
 with the controlled provider split:

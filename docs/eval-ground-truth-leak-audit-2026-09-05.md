@@ -1,4 +1,5 @@
 # Eval ground-truth leak audit — `seed_scenario` in the agent prompt (2026-09-05)
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 READ-ONLY AUDIT. This document is the sole artifact created by the audit task.
 No repository file was edited, created, or deleted other than this report; no
@@ -51,9 +52,9 @@ verified:
    sliding-window manager trims only the *oldest* messages —
    `sliding_window_conversation_manager.py:150-274`).
 5. **No unleaked runnable version ever existed** [MEASURED, git history]. The
-   injection line was introduced in `b5e3c84` (2026-09-04T06:49:16-05:00, the
+   injection line was introduced in `2fbfab9` (2026-09-04T06:49:16-05:00, the
    commit that created `evals/run_evals.py`) and is byte-identical through
-   HEAD; `evals/run_evals.py`'s blob is unchanged from `82d8271`
+   HEAD; `evals/run_evals.py`'s blob is unchanged from `f1caf38`
    (2026-09-04T13:50:03-05:00) through HEAD, and every earlier tracked
    version contained the identical injection text at a different line number.
    Runtime artifacts independently corroborate that the label was live in the
@@ -160,7 +161,7 @@ historical run** [MEASURED, git + venv]: `uv.lock` is git-tracked and pins
 `strands-agents==1.54.0` / `strands-agents-evals==1.2.0` / 
 `strands-agents-tools==0.8.7` (hash-pinned, wheel 2026-08-27); the pins are
 unchanged since the bootstrap commit, and the single later lock-touching
-commit (`82d8271`, removing `anthropic`) left the strands entries untouched.
+commit (`f1caf38`, removing `anthropic`) left the strands entries untouched.
 The venv holds exactly one dist-info per package, all stamped
 2026-09-04 06:48 — one `uv` sync installed before the first eval run and
 never changed. The propagation behavior cited above is therefore the
@@ -346,16 +347,16 @@ the code trace (§2, §3 hops 1-10) is what proves the label was in it
 
 Git facts underneath the table [all MEASURED from git unless noted]:
 
-- The injection was introduced in `b5e3c84` (2026-09-04T06:49:16-05:00,
+- The injection was introduced in `2fbfab9` (2026-09-04T06:49:16-05:00,
   "Place the five human-authored spec files verbatim" — the commit that
   created `evals/run_evals.py`) and never modified; only its line number
   drifted (81 → 87 → 96 → 99 → 101) as unrelated code changed above it.
-- `evals/run_evals.py` blob is byte-identical (`0f2a85f…`) from `82d8271`
+- `evals/run_evals.py` blob is byte-identical (`0f2a85f…`) from `f1caf38`
   (2026-09-04T13:50:03-05:00) through HEAD; every earlier tracked version
   contained the identical injection text.
-- `evals/run_sequential.py` (tracked, added `ee18e73`, 2026-09-04T11:53:37)
+- `evals/run_sequential.py` (tracked, added `af90ddc`, 2026-09-04T11:53:37)
   imports `run_case` — leaky at every version that ever existed.
-- The graph became runnable at `c6ee247` (2026-09-04T09:03:27-05:00, "Add
+- The graph became runnable at `714a282` (2026-09-04T09:03:27-05:00, "Add
   orchestrator"); before that `run_evals.py` ImportError'd by design
   (`evals/run_evals.py:42-43`). **Every runnable configuration in this
   repository's history contained the leak.**
@@ -368,8 +369,8 @@ Git facts underneath the table [all MEASURED from git unless noted]:
 
 | Run / report | Driver | Code-version evidence | Leak present in executing code? | Confidence |
 |---|---|---|---|---|
-| 2026-09-04 sequential runs (GLM-era; includes the "perfect 20/20-row" case-4 run and the 57/67 = 85.07% summary) | `evals/run_sequential.py` | tracked driver imports `run_case` since creation (`ee18e73`); `run_evals.py` injection present at every commit | **YES** | HIGH (tracked files, git) |
-| 2026-09-04 verify.sh step-6 Experiment runs (`verify-*.txt` artifacts) | `evals/run_evals.py` | tracked; injection present at every commit from `b5e3c84` | **YES** | HIGH |
+| 2026-09-04 sequential runs (GLM-era; includes the "perfect 20/20-row" case-4 run and the 57/67 = 85.07% summary) | `evals/run_sequential.py` | tracked driver imports `run_case` since creation (`af90ddc`); `run_evals.py` injection present at every commit | **YES** | HIGH (tracked files, git) |
+| 2026-09-04 verify.sh step-6 Experiment runs (`verify-*.txt` artifacts) | `evals/run_evals.py` | tracked; injection present at every commit from `2fbfab9` | **YES** | HIGH |
 | 2026-09-04 token canary (12/15 rows) | `evals/token_canary.py` → `run_one_case` → `run_evals.run_case` (`token_canary.py:486` at HEAD) | driver untracked (no git history; mtime 2026-09-04 20:15); `run_evals.py` leaky at all candidate HEADs | **YES** | MEDIUM-HIGH (tracked core HIGH; untracked wrapper corroborated by routing + artifacts) |
 | 2026-09-04 Gemini judge canary (14/15 rows) | `evals/gemini_judge_canary.py:211` → `run_one_case` | wrapper untracked; `run_evals.py` leaky at all candidate HEADs; artifact corroboration (eval-rows rows 4-5 quote the seed-scenario user turn) | **YES** | MEDIUM-HIGH |
 | 2026-09-04 Gemini 5-case validation (NO-GO; 2/5 completed) | `evals/gemini_judge_5case.py` → `run_one_case` | doc states command (`docs/gemini-judge-5-case-validation-2026-09-04.md:48`); wrapper untracked; core leaky | **YES** (cases that reached the graph at all) | MEDIUM-HIGH |
@@ -517,7 +518,7 @@ of the above. **UNKNOWN** = not determinable from available evidence.
 | 5 | Tool returns never carry scenario labels / `_comment`s | MEASURED (code) | §2.5 citations |
 | 6 | Evaluator-side `case.input` use is grader-only | MEASURED (code) | §2.6 citations |
 | 7 | All 6 drivers route through the injection | MEASURED (code) | §2.7 table (+ archived pre-edit snapshot line 143) |
-| 8 | Injection present since `b5e3c84`, byte-identical to HEAD; no unleaked runnable version ever existed | MEASURED (git) | pickaxe `-S`/`-G` over `evals/`; per-commit `git grep`; blob `0f2a85f` from `82d8271`→HEAD |
+| 8 | Injection present since `2fbfab9`, byte-identical to HEAD; no unleaked runnable version ever existed | MEASURED (git) | pickaxe `-S`/`-G` over `evals/`; per-commit `git grep`; blob `0f2a85f` from `f1caf38`→HEAD |
 | 9 | 89.8% run executed the leaky blob | MEASURED (git artifacts) + OBSERVED | its `preflight.txt:12-24` (tracked diff = fix only) + case-01 judge rows 4-5 |
 | 10 | 93.0% run executed the leaky blob | MEASURED (git artifacts) + OBSERVED | its `pre-run-git-status.txt` (evals/ unmodified) + case-01 rows 0-1, case-04 row 17 |
 | 11 | Both figures are judge-row aggregates incl. Output rows | DOCUMENTED | the two docs' own §-definitions of rows/judgeable |
@@ -543,7 +544,7 @@ is asserted from conversational memory alone.
 
 ## 9. ZERO-MODIFICATION ATTESTATION
 
-- **git status before** (captured at task start, HEAD `c5f5e13`,
+- **git status before** (captured at task start, HEAD `ac1ba3a`,
   2026-09-05T13:56:05-05:00): 32 untracked entries (`agent-memory/evidence/…`
   run dirs and probe files, 3 `agent-memory/*.md`, 14 `docs/*.md`, 4
   `evals/*.py`, 4 `tests/test_*_offline.py`); zero tracked files modified.
@@ -551,7 +552,7 @@ is asserted from conversational memory alone.
 - **git status after** (captured at report completion, verified by count and
   diff): the identical 32 entries plus exactly this one new untracked file
   (`docs/eval-ground-truth-leak-audit-2026-09-05.md`) — 33 entries total,
-  no tracked file touched, HEAD still `c5f5e13`, no stashes.
+  no tracked file touched, HEAD still `ac1ba3a`, no stashes.
 - **Full test suite NOT run** — this task is read-only and ran nothing that
   mutates state. **`scripts/verify.sh` NOT run** (its step 6 is the live
   benchmark — `EVAL_MODE=1 evals/run_evals.py` — explicitly out of scope).

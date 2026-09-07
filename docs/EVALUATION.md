@@ -1,4 +1,5 @@
 # Evaluation & results — the honest summary
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 **As of 2026-09-06.** This document summarizes what has and has not been
 measured for Reconciliation Investigator. Every figure below is quoted from

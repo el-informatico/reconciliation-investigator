@@ -1,4 +1,5 @@
 # STOP-dissent verification and override review — case-4 supersession notice
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 Date: 2026-09-05 · Mode: READ-ONLY review; this file is the only artifact
 created (no other file edited, created, or deleted; nothing staged, committed,

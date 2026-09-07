@@ -4,8 +4,8 @@ Re-validates each credential source's Groq environment INDEPENDENTLY
 (treat the two GROQ_API_KEY values as unrelated organizations until
 response metadata says otherwise — key values are never compared):
 
-  --env-file /path/to/first/.env   --env-tag [SIBLING-A]
-  --env-file /path/to/second/.env  --env-tag gateway
+  --env-file /path/to/first/.env   --env-tag key-a
+  --env-file /path/to/second/.env  --env-tag key-b
 
 Phases and per-environment call budget (<=4 requests total):
   1. models.list                      (auth + openai/gpt-oss-120b presence; sanitized boolean)
@@ -96,7 +96,7 @@ def main() -> None:
     ap.add_argument("--env-file", required=True,
                     help=".env file to read GROQ_API_KEY from (by name only; required — no default)")
     ap.add_argument("--env-tag", required=True,
-                    choices=["[SIBLING-A]", "gateway"],
+                    choices=["key-a", "key-b"],
                     help="label for evidence files and summaries")
     ap.add_argument("--model", default=MODEL)
     ap.add_argument("--base-url", default=BASE_URL)

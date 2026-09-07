@@ -1,4 +1,5 @@
 # Token-workload canary — ONE instrumented evaluation case (2026-09-04)
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 **Question:** replace the ESTIMATED agent/judge token split from
 `docs/token-workload-audit-2026-09-04.md` with MEASURED per-request usage

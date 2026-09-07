@@ -1,4 +1,10 @@
 # Stage 3 pending-work audit (2026-09-05)
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
+
+> REDACTED 2026-09-07 (privacy pass): sibling-project names and
+> out-of-repo local paths in this report were replaced with neutral tokens
+> ([SIBLING-A]…[SIBLING-J], ~) before publication; originals preserved in
+> the author's private pre-rewrite bundle.
 
 **Status: PRE-COMMIT AUDIT COMPLETE. Identity corrected; pending work fully
 audited and classified; the Groq parsing-retry/fix work verified (security,
@@ -21,7 +27,7 @@ live 5-case benchmark — steps 2 and 5 equivalents were run individually).
 ## 1. Remote baseline (full SHA) — MEASURED
 
 - Remote: `origin` = `noreply@example.com:el-informatico/reconciliation-investigator.git`
-- Remote HEAD: `refs/heads/main` = **`8eb545f757fdacbaf043a9d67221738667282bdb`**
+- Remote HEAD: `refs/heads/main` = **`160abd856734e33623eb97f226c422f0595a1a2f`**
   (verified three ways: `git ls-remote` SSH, `gh api .../branches/main`, and the
   tracking ref). No other refs, **0 tags**, 1 branch.
 - Remote commit count: **19** (GitHub API + `git rev-list --count origin/main`).
@@ -29,7 +35,7 @@ live 5-case benchmark — steps 2 and 5 equivalents were run individually).
 
 ## 2. Local baseline (full SHA) — MEASURED
 
-- Branch: `main` (sole branch). Local HEAD = **`8eb545f757fdacbaf043a9d67221738667282bdb`**.
+- Branch: `main` (sole branch). Local HEAD = **`160abd856734e33623eb97f226c422f0595a1a2f`**.
 - Local commit count: **19**. Identity on all 19 commits (author AND committer,
   unanimous by `git log --format | sort -u`): `juanz <204210901+el-informatico@users.noreply.github.com>`.
 - Local-only ref: `refs/heads/stage2-pre-rewrite-backup` = `316835fb73d66850444473c86fa33df10c4c8169`
@@ -39,7 +45,7 @@ live 5-case benchmark — steps 2 and 5 equivalents were run individually).
 ## 3. Ahead/behind state — MEASURED
 
 `git rev-list --left-right --count origin/main...HEAD` → **0 / 0**.
-Merge-base = `8eb545f…` (= both tips). Index empty (`git diff --cached` = 0 lines).
+Merge-base = `160abd8…` (= both tips). Index empty (`git diff --cached` = 0 lines).
 Commit-range diff `origin/main..HEAD` = empty. All pending work therefore lives
 in the working tree and untracked files only.
 
@@ -140,9 +146,9 @@ simulation (§9).
 | `uv run --locked pytest -q` (verify.sh step-5 form; full working tree) | **132 passed** in 5.31 s (collect count 132 re-verified; matches Stage-2's record) |
 | `uv run --locked pytest tests/test_groq_parsing_retry_offline.py tests/test_tools.py tests/test_gate_executor.py -q` (retry + tool + security/gate/executor) | **59 passed** (21 + 15 + 23) |
 | `bash scripts/guard-segregation-of-duties.sh <repo>` (verify.sh step-2 form) | **exit 0** |
-| Committed-tree simulation (sandbox clone of `8eb545f` + exactly the proposed file set; `GROQ_API_KEY=dummy uv run --locked pytest -q`) | **94 passed** in 7.26 s — exactly the predicted 72 baseline + 1 regression + 21 retry; zero collection errors; guard exit 0 |
+| Committed-tree simulation (sandbox clone of `160abd8` + exactly the proposed file set; `GROQ_API_KEY=dummy uv run --locked pytest -q`) | **94 passed** in 7.26 s — exactly the predicted 72 baseline + 1 regression + 21 retry; zero collection errors; guard exit 0 |
 
-Test-count reconciliation: 132 = 72 (committed at `8eb545f`) + 1 (`test_tools`) + 21 (retry offline) + 38 excluded-workstream tests (gemini-judge 15, token 8, retry-canary-driver 15). No failures anywhere; nothing to classify.
+Test-count reconciliation: 132 = 72 (committed at `160abd8`) + 1 (`test_tools`) + 21 (retry offline) + 38 excluded-workstream tests (gemini-judge 15, token 8, retry-canary-driver 15). No failures anywhere; nothing to classify.
 
 ## 10. Secret / artifact scan — MEASURED (delegated, independent)
 
@@ -273,11 +279,11 @@ events. Includes the root-cause audit, both canary reports, the active
 ```
 
 - Author/committer will be `juanz <204210901+el-informatico@users.noreply.github.com>` (repo-local config now set); no Claude Code mention, no co-author trailers. The `scripts/hooks/pre-commit` segregation guard will run at commit time (currently exit 0).
-- Push plan (after approval + post-commit checks): `git push origin main` only — no tags, no `stage2-pre-rewrite-backup`, no force. Remote pre-verified: PRIVATE, 1 branch, HEAD `8eb545f…`, 19 commits, 0 tags.
+- Push plan (after approval + post-commit checks): `git push origin main` only — no tags, no `stage2-pre-rewrite-backup`, no force. Remote pre-verified: PRIVATE, 1 branch, HEAD `160abd8…`, 19 commits, 0 tags.
 
 ## 14. Safety statement
 
-**Commit #20 is SAFE TO CREATE**, as a normal descendant of `8eb545f`
+**Commit #20 is SAFE TO CREATE**, as a normal descendant of `160abd8`
 (ahead/behind 0/0; fast-forward push), with one ratification decision: whether
 to force-add the three `run.log` evidence files (recommended yes — §10) or
 commit the 78-file set without them (fallback, gap disclosed). Residual notes,

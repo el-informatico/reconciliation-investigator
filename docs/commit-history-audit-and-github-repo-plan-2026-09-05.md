@@ -1,4 +1,10 @@
 # Commit history audit and GitHub repository plan (2026-09-05)
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
+
+> REDACTED 2026-09-07 (privacy pass): sibling-project names and
+> out-of-repo local paths in this report were replaced with neutral tokens
+> ([SIBLING-A]…[SIBLING-J], ~) before publication; originals preserved in
+> the author's private pre-rewrite bundle.
 
 **Status: READ-ONLY DIAGNOSTIC COMPLETE — proposal only. Nothing was created,
 pushed, committed, amended, or rewritten; no live LLM/API call was made. The
@@ -81,7 +87,7 @@ Full subjects, verbatim (required for review; ellipses never used):
 13. `c2803a5` — Sequential eval driver (SDK public per-row evaluator API) — Experiment.run_evaluations reproducibly hung at queue.join across three runs/two wirings (tracebacks in evidence); same evaluators/rubrics/cases/task function, only the scheduling wrapper differs
 14. `48a4586` — Reviewer conditional-accept repairs: the three claimed-but-missing regression tests actually added (APPROVE+requires_correction=false executes — human authority; MAX_HUMAN_ROUNDS exhaustion audited+surfaced; extractor multi-object/failed-first-candidate); run_sequential judge crashes now count as failed rows (label judge-error — never shrink the denominator); judge model max_tokens 4096->8192 (tool-level judge prompts blew the cap live: MaxTokensReachedException); audit evidence cross-refs corrected (6b8e29f, D-2026-09-04-11) with the reviewer catch noted in place
 15. `546e88b` — Agent model max_tokens 4096->8192: two eval cases died mid-graph on MaxTokensReachedException (detector evidence bundle over the cap); the three completed cases pass every evaluator row; unauthorized-action count 0 across the whole run
-16. `958a815` — Credential policy enforced structurally: app model wiring switched to Groq (OpenAI-compatible endpoint, openai/gpt-oss-120b — the gateway-validated configuration) via GROQ_API_KEY from env or gitignored .env (15-line loader, env wins, values never printed); the Anthropic/Z.AI path REMOVED — anthropic dependency dropped from the lock so the app cannot touch the Claude Code credential even by mistake (human ruling 2026-09-04); 4 policy tests incl. anthropic-import-refusal; 72/72 green. Eval run HELD pending human quota confirmation (gateway lesson L007: free-tier daily cap)
+16. `958a815` — Credential policy enforced structurally: app model wiring switched to Groq (OpenAI-compatible endpoint, openai/gpt-oss-120b — the [SIBLING-B]-validated configuration) via GROQ_API_KEY from env or gitignored .env (15-line loader, env wins, values never printed); the Anthropic/Z.AI path REMOVED — anthropic dependency dropped from the lock so the app cannot touch the Claude Code credential even by mistake (human ruling 2026-09-04); 4 policy tests incl. anthropic-import-refusal; 72/72 green. Eval run HELD pending human quota confirmation ([SIBLING-B] lesson L007: free-tier daily cap)
 17. `5d3677c` — Fix: max_tokens rides inside OpenAIModel params (top-level kwarg silently ignored per the SDK's own warning); smoke 2 clean — no invalid-param warning, GROQ_SMOKE_RESULT: OK
 18. `8c13fc2` — Provider feasibility: Cerebras NO-GO (402 account wall), Gemini 3.1 Flash-Lite CONDITIONAL GO (native path, mandatory <=14 RPM pacer) — probes/ suite, live evidence, report; 20-RPD discrepancy resolved (gemini-3.6-flash, other project); no eval run, no provider switch (D-2026-09-04-12)
 19. `316835f` — Groq two-key feasibility: both sibling keys WORK (auth/model/inference/tool/replay) but are ONE org (shared quota, remaining-requests 993 proof); Free tier NO-GO for full run (TPD 200K documented vs 450-650K = 2.25-3.25x over); PAYG $0.10-0.17/run; '1000' header = RPD not RPM (label retired, provenance recorded); first canary = Groq free tier, one case; no eval run, no provider switch (D-2026-09-04-13)
@@ -216,7 +222,7 @@ Findings needing a human decision or awareness before any push:
 
 - `gh` is authenticated read-only as `el-informatico`; the account holds 222
   repositories (predominantly private `[SIBLING-D]*` validation repos plus
-  `[SIBLING-A]`, `[SIBLING-D]317`, `[SIBLING-C]`). No write was performed
+  `[SIBLING-A]`, `[SIBLING-D]`, `[SIBLING-C]`). No write was performed
   against any of them. (MEASURED)
 - UNKNOWN (deliberately untested): whether the token's scopes permit repo
   creation — testing it would require a write attempt, which this task

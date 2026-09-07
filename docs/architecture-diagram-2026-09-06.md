@@ -8,7 +8,7 @@ in `README.md` (kept byte-identical by
 alongside this file as `docs/architecture-diagram.svg` and
 `docs/architecture-diagram.png`.
 
-The diagram describes the system as implemented at commit `0699249`
+The diagram describes the system as implemented at commit `eba7c2b`
 (2026-09-06): the three-agent investigation graph, the human approval gate
 with its capability-token mechanism, and the deterministic execution path.
 Every zone maps to code; see the accuracy map below.
@@ -160,6 +160,6 @@ provenance section below.
 - `tests/test_architecture_diagram_sync.py` pins the README block and this
   block byte-identical.
 - Classification of this document's own claims: code anchors are
-  OBSERVED (read from the working tree at `0699249`); render facts are
+  OBSERVED (read from the working tree at `eba7c2b`); render facts are
   MEASURED (tool output recorded above); GitHub-version-family is
   DOCUMENTED (GitHub public docs), not measured here.

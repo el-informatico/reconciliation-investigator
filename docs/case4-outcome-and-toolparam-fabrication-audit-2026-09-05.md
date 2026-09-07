@@ -15,6 +15,7 @@
 > as authoritative for case-4's outcome and the tool-parameter fabrication
 > findings.** This file is retained, unedited below this notice, as a historical
 > record of what the earlier session concluded.
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 ---
 
@@ -90,7 +91,7 @@ unleaked version").
 
 | # | When (UTC) | Run | Agents / Judges | Leak | Case-4 outcome | Citation |
 |---|---|---|---|---|---|---|
-| 1 | 09-04 14:04 | verify.sh step-6 Exp run 1 (16%) | GLM / judges unwired | present | Ran (trajectory existed); all judged rows 0.00 on judge wiring; **classifier verdict NOT preserved** — UNKNOWN | `verify-full-2026-09-04.txt:502`; wiring fixed after, in `2765e98` |
+| 1 | 09-04 14:04 | verify.sh step-6 Exp run 1 (16%) | GLM / judges unwired | present | Ran (trajectory existed); all judged rows 0.00 on judge wiring; **classifier verdict NOT preserved** — UNKNOWN | `verify-full-2026-09-04.txt:502`; wiring fixed after, in `cf58ddf` |
 | 2 | 09-04 14:18 | verify.sh step-6 Exp run 2 (68%) | GLM / glm-5.3 | present | **PASS — `MANUAL_OVERRIDE` @ confidence 0.93** (classifier verdict preserved verbatim: `reconciliation_investigator_report.json:4912`); case rows 3/5 (Trajectory 0.00, ToolSel 0.90 failed) | `verify-full-2026-09-04-run2.txt:348-388` |
 | 3 | 09-04 17:21 | Experiment run4-official window (attribution by timing — INFERRED; the pass itself is DIRECT, ticket-store) [CORRECTED — see docs/case4-dissent-section5-verbatim-and-verification-2026-09-05.md: run4-official died via SIGINT before this pass occurred; the pass belongs to a separate, unlogged execution] | GLM / GLM | present | **PASS — `MANUAL_OVERRIDE` @ 0.95** (`TCK-4e744f8f7592`, draft `DRF-beac5cd8cb28` 17:21:08Z) — found by adversarial re-review; not part of any archived run tree | `runtime/tickets.jsonl:31`; `runtime/drafts.jsonl:20` |
 | 4 | 09-04 17:55 | sequential run A (85.07%) | GLM / glm-5.3 | present | **PASS — `MANUAL_OVERRIDE` @ 0.92; 19/19 case rows**, Output `CORRECT_WITH_SPECIFIC_EVIDENCE` citing EVT-L-40041; pinned to ticket `TCK-…` @17:47:07Z via the judge-quoted draft id `DRF-62180c19df8e` | `evals-sequential-2026-09-04.txt:263-282`; `evals-sequential-results-2026-09-04.json:387`; `runtime/tickets.jsonl:34` |

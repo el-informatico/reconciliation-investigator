@@ -1,4 +1,5 @@
 # Python-strands profile — documented gotchas
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 Authored 2026-09-04 with the profile itself (decisions D-2026-09-04-02,
 aresV2) — unlike the two Java-era profiles this one was not extracted

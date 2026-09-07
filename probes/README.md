@@ -54,8 +54,8 @@ probes exit with `credential(s) not present in env file` if pointed there.
 ```bash
 uv run --locked python probes/probe_cerebras.py --env-file /path/to/cerebras.env
 uv run --locked python probes/probe_gemini.py  --env-file /path/to/gemini.env
-uv run --locked python probes/probe_groq.py    --env-file /path/to/first.env  --env-tag [SIBLING-A]
-uv run --locked python probes/probe_groq.py    --env-file /path/to/second.env --env-tag gateway
+uv run --locked python probes/probe_groq.py    --env-file /path/to/first.env  --env-tag key-a
+uv run --locked python probes/probe_groq.py    --env-file /path/to/second.env --env-tag key-b
 uv run --locked python probes/probe_strands.py --provider cerebras      --env-file /path/to/cerebras.env
 uv run --locked python probes/probe_strands.py --provider gemini-compat --env-file /path/to/gemini.env
 uv run --frozen --with google-genai python probes/probe_strands.py --provider gemini-native --env-file /path/to/gemini.env

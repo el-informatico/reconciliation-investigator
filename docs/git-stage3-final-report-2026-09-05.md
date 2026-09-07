@@ -1,6 +1,7 @@
 # Stage 3 final report — identity fix, pending-work audit, commit #20, private push (2026-09-05)
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
-**Status: COMPLETE.** Commit #20 (`c5f5e1326a13f26835ec6afc4a4c6bead5d0772b`,
+**Status: COMPLETE.** Commit #20 (`ac1ba3a394e7afc85980e49615a9a720aa8b5b4f`,
 "Add bounded retry for Groq parsing failures", 81 files, +10,430/−1) was created
 as a normal descendant of the Stage-2 19-commit baseline with the approved human
 identity and pushed — `main` only, non-force — to the PRIVATE repository
@@ -40,15 +41,15 @@ writes were confined to this repository and `/tmp/stage3/`.
 
 ## 4. Remote Stage-2 baseline (MEASURED)
 
-`refs/heads/main` @ **`8eb545f757fdacbaf043a9d67221738667282bdb`**, 19 commits,
+`refs/heads/main` @ **`160abd856734e33623eb97f226c422f0595a1a2f`**, 19 commits,
 PRIVATE, owner `el-informatico`, 1 branch, 0 tags — re-verified by `git
 ls-remote` + `gh api` immediately before staging and again at the push gate
 (remote unchanged; local ahead/behind 0/0 before commit).
 
 ## 5. Commit #20 full SHA (MEASURED)
 
-**`c5f5e1326a13f26835ec6afc4a4c6bead5d0772b`** — parent
-`8eb545f757fdacbaf043a9d67221738667282bdb` (sole new descendant; fast-forward).
+**`ac1ba3a394e7afc85980e49615a9a720aa8b5b4f`** — parent
+`160abd856734e33623eb97f226c422f0595a1a2f` (sole new descendant; fast-forward).
 
 ## 6. Commit #20 subject
 
@@ -135,7 +136,7 @@ the committed-tree simulation).
 |---|---|---|
 | Full working tree (pre-commit) | `uv run --locked pytest -q` | **132 passed** (5.21 s) |
 | Targeted retry+tools+gate | `pytest tests/test_groq_parsing_retry_offline.py tests/test_tools.py tests/test_gate_executor.py` | **59 passed** |
-| Committed-tree simulation (clone of `8eb545f` + approved set) | `GROQ_API_KEY=dummy uv run --locked pytest -q` | **94 passed** — exactly 72+1+21, zero import errors |
+| Committed-tree simulation (clone of `160abd8` + approved set) | `GROQ_API_KEY=dummy uv run --locked pytest -q` | **94 passed** — exactly 72+1+21, zero import errors |
 | Post-commit full suite | `uv run --locked pytest -q` | **132 passed** (5.25 s) |
 | Segregation guard | `scripts/guard-segregation-of-duties.sh` | **exit 0** (×3) |
 
@@ -155,13 +156,13 @@ commit object's added lines: **0 hits**. Excluded probe artifacts: CLEAN.
 ## 13. Push result (MEASURED)
 
 Push gate (10 fail-closed checks: branch, local identity, global unset, 20
-local commits, 0 behind / exactly 1 ahead, remote still at `8eb545f…`, no other
+local commits, 0 behind / exactly 1 ahead, remote still at `160abd8…`, no other
 remote refs, PRIVATE) — ALL PASS, then:
 
 ```
 git push origin main
 To github.com:el-informatico/reconciliation-investigator.git
-   8eb545f..c5f5e13  main -> main
+   160abd8..ac1ba3a  main -> main
 ```
 
 **Non-force, fast-forward, `refs/heads/main` only.** No tags existed or were
@@ -169,9 +170,9 @@ pushed; `stage2-pre-rewrite-backup` and every other local ref stayed local.
 
 ## 14. Remote commit count (MEASURED)
 
-GitHub API `commits?per_page=100` → **20**. Remote tip = `c5f5e1326a13…`, its
-parent = `8eb545f…` — the first 19 commits are the Stage-2 rewritten history,
-unchanged (also verified locally: `HEAD~1` = `8eb545f`, `git diff 8eb545f
+GitHub API `commits?per_page=100` → **20**. Remote tip = `ac1ba3a394e…`, its
+parent = `160abd8…` — the first 19 commits are the Stage-2 rewritten history,
+unchanged (also verified locally: `HEAD~1` = `160abd8`, `git diff 160abd8
 HEAD~1` empty).
 
 ## 15. Remote privacy verification (MEASURED)
@@ -183,7 +184,7 @@ at any point.
 ## 16. Only main was pushed (MEASURED)
 
 Post-push `git ls-remote origin` → exactly `HEAD` and `refs/heads/main`, both
-`c5f5e1326a13…`; GitHub branches API → 1 branch (`main`); tags API → 0.
+`ac1ba3a394e…`; GitHub branches API → 1 branch (`main`); tags API → 0.
 Remote commit #20 metadata via API: author and committer both
 `juanz <204210901+el-informatico@users.noreply.github.com>`; subject
 "Add bounded retry for Groq parsing failures"; trailer scan → 0.
@@ -192,7 +193,7 @@ Remote commit #20 metadata via API: author and committer both
 
 1. Commit-message body carries one trailing-newline rendering artifact
    (`%B` display class; content verified identical). Same class Stage 2
-   disclosed for `f067bcd`.
+   disclosed for `f067bcd` [CORRECTED 2026-09-07 — commit pruned by the agent-memory excision rewrite; see the operative execution plan's §2.4 commit map].
 2. The committed docs reference not-yet-committed files (the evals-layer
    reproduce command `python -m evals.gemini_judge_5case`, the canary driver,
    the case-4 audit's gemini-judge evidence tree). They become followable when
@@ -217,7 +218,7 @@ Remote commit #20 metadata via API: author and committer both
 ## 18. Explicit statement
 
 **The repository `el-informatico/reconciliation-investigator` remains PRIVATE**
-(20 commits, `main` @ `c5f5e1326a13f26835ec6afc4a4c6bead5d0772b`). It must
+(20 commits, `main` @ `ac1ba3a394e7afc85980e49615a9a720aa8b5b4f`). It must
 become PUBLIC only after an explicit, future human authorization; none has been
 given.
 

@@ -1,4 +1,10 @@
 # Provider feasibility report — the two Groq environments ([SIBLING-A] & [SIBLING-B])
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
+
+> REDACTED 2026-09-07 (privacy pass): sibling-project names and
+> out-of-repo local paths in this report were replaced with neutral tokens
+> ([SIBLING-A]…[SIBLING-J], ~) before publication; originals preserved in
+> the author's private pre-rewrite bundle.
 
 **Date:** 2026-09-04 · **Status:** investigation complete; classifications in §15
 **Scope:** controlled feasibility test ONLY. The 5-case evaluation was NOT run; the
@@ -36,10 +42,10 @@ The decisive facts, each independently evidenced:
    quota to exploit — and the rules (correctly) forbid trying.
 3. A **label correction with provenance**: `x-ratelimit-limit-requests: 1000`
    is the **RPD** (daily) bucket, not RPM. Groq's docs say the `*-requests`
-   headers "always refer to Requests Per Day"; the gateway proved it twice via
+   headers "always refer to Requests Per Day"; the [SIBLING-B] proved it twice via
    the +86.4 s reset ladder (86,400 s ÷ 1000); today's probes reproduced the
    same ladder. The "1,000 requests/min" phrasing that appeared in earlier
-   local notes (groq-preflight §5) was the gateway's own corrected-away
+   local notes (groq-preflight §5) was the [SIBLING-B]'s own corrected-away
    misread (their D012 amendment, 2026-08-22) — this report retires it here too.
 4. Free-tier daily capacity (TPD 200K, documented per-model) vs our workload
    (450–650K): **2.25–3.25× over** → the full 5-case run cannot complete for $0
@@ -57,7 +63,7 @@ suffix, length, hash, or other derived representation appears in any artifact
 (this report, evidence files, commit, or terminal output); request headers are
 never recorded (only response headers, which never carry the key); no `.env`
 contents displayed; neither sibling modified (verified read-only access;
-gateway `.env` mtime unchanged at 2026-08-22); no keys/accounts/billing
+[SIBLING-B] `.env` mtime unchanged at 2026-08-22); no keys/accounts/billing
 created; Claude Code's GLM-5.3 configuration untouched. An adversarial
 post-investigation scan (§14) re-verified all of this against BOTH sibling
 `.env` files and this repo's own `.env`.
@@ -83,7 +89,7 @@ post-investigation scan (§14) re-verified all of this against BOTH sibling
 - Strands-level Groq tool/replay was already validated TODAY on the repo's own
   key (`agent-memory/evidence/groq-replay-probe-2026-09-04.txt`: turn-1 tool
   call 474 in/71 out, turn-2 replay 1,160 in/144 out, 3.1 s total; strands
-  strips `reasoningContent` on replay with a warning — the trap the gateway's
+  strips `reasoningContent` on replay with a warning — the trap the [SIBLING-B]'s
   Java driver handles manually in `TooledChatModel.replaySafe`).
 
 **Strands compatibility verdict:** the existing Groq integration uses the
@@ -136,7 +142,7 @@ DOES expose the effective per-org limits programmatically, per response.
 ## 6. [SIBLING-B] Groq environment findings
 
 - Credential: `GROQ_API_KEY` present in `../[SIBLING-B]/.env` (name
-  confirmed; never displayed; file untouched, mtime 2026-08-22). The gateway is
+  confirmed; never displayed; file untouched, mtime 2026-08-22). The [SIBLING-B] is
   a Java 21 / Spring Boot app (Spring AI 2.0.1 OpenAI starter →
   `https://api.groq.com/openai/v1`, model `openai/gpt-oss-120b`, max-tokens
   4096, no streaming; replay-safe stripping in `TooledChatModel.java:64-88`).
@@ -148,7 +154,7 @@ DOES expose the effective per-org limits programmatically, per response.
   Response body carries `"service_tier": "on_demand"` (observed metadata;
   `flex` is the paid-only elevated tier, so `on_demand` is not by itself a
   billing indicator — Free plan responses show it too).
-- Historical corroboration in the gateway's own evidence (read-only):
+- Historical corroboration in the [SIBLING-B]'s own evidence (read-only):
   - 2026-08-22 header captures under their key: limits 1000/8000 (twice), and
     the three-request ladder 999→998→997 with resets 1m26.4s→2m52.8s→4m19.2s
     from which their D012 amendment derived "limit-requests 1000 = RPD".
@@ -163,7 +169,7 @@ DOES expose the effective per-org limits programmatically, per response.
 
 ```bash
 uv run --locked python probes/probe_groq.py --env-file ~/projects/[SIBLING-A]/.env --env-tag [SIBLING-A]
-uv run --locked python probes/probe_groq.py --env-file ~/projects/[SIBLING-B]/.env   --env-tag gateway
+uv run --locked python probes/probe_groq.py --env-file ~/projects/[SIBLING-B]/.env   --env-tag [SIBLING-B]
 uv run --locked python -   # one-call org disambiguation (script inline, tee'd to groq-org-disambiguation-2026-09-04.txt)
 ```
 
@@ -173,7 +179,7 @@ uv run --locked python -   # one-call org disambiguation (script inline, tee'd t
 env=[SIBLING-A]: P1 200 (899ms) catalog=14 model present | P2 200 "OK" 130 tok (44 reasoning)
     headers: limit-requests 1000 / limit-tokens 8000; remaining 999/998/997; resets 1m26.4s→4m19.2s
     P3a 200 tool_call get_balance{"account_id":"ACC-1"} | P3b 200 correct final answer
-env=gateway:   P1 200 (1033ms) catalog=14 model present | P2 200 "OK" 123 tok (37 reasoning)
+env=[SIBLING-B]:   P1 200 (1033ms) catalog=14 model present | P2 200 "OK" 123 tok (37 reasoning)
     headers: limits identical; remaining 996/995/994 at first use; resets 5m45.6s→8m38.4s
     P3a/P3b identical success; response body service_tier "on_demand"
 disambiguation: [SIBLING-A] follow-up call → remaining-requests 993
@@ -201,9 +207,9 @@ impossible and forbidden).
 | --- | --- | --- |
 | RPM | 30 | DOCUMENTED (Free Plan table). Not header-exposed (no RPM header exists). Not re-measured — inducing 429s is out of scope. |
 | TPM | 8,000 combined in+out | **ACCOUNT-SPECIFIC CONFIRMED via live response headers** (`x-ratelimit-limit-tokens`, present on every 200) — same value on both keys. |
-| RPD | 1,000 | **ACCOUNT-SPECIFIC CONFIRMED via live response headers** (`x-ratelimit-limit-requests` = RPD per docs; the +86.4 s refill ladder reproduced today, matching the gateway's 2026-08-22 proof). |
-| TPD | 200,000 | DOCUMENTED (Free Plan table). **No header exposes TPD; today's usage never approached it** — the 2026-08-22 gateway runs (~55.8K and ~119.5K tokens) stayed under it without a 429, so the cap is docs-sourced, not header- or 429-verified. |
-| Plan (Free vs PAYG) | Free | Header limits equal the documented Free table exactly (PAYG would show 1K RPM/250K TPM headers instead); no PAYG/billing indicators in either repo; gateway decision D011 "no budget for a paid tier". |
+| RPD | 1,000 | **ACCOUNT-SPECIFIC CONFIRMED via live response headers** (`x-ratelimit-limit-requests` = RPD per docs; the +86.4 s refill ladder reproduced today, matching the [SIBLING-B]'s 2026-08-22 proof). |
+| TPD | 200,000 | DOCUMENTED (Free Plan table). **No header exposes TPD; today's usage never approached it** — the 2026-08-22 [SIBLING-B] runs (~55.8K and ~119.5K tokens) stayed under it without a 429, so the cap is docs-sourced, not header- or 429-verified. |
+| Plan (Free vs PAYG) | Free | Header limits equal the documented Free table exactly (PAYG would show 1K RPM/250K TPM headers instead); no PAYG/billing indicators in either repo; [SIBLING-B] decision D011 "no budget for a paid tier". |
 | Console-only | exact org limits page, usage analytics, spend limits, invoices | No usage/quota API exists (docs). |
 
 No 429 and no 402 occurred (nor were any induced). Groq has no HTTP 402 in its
@@ -215,7 +221,7 @@ documented taxonomy; if inference had been blocked we would have expected
 Both keys: **Free Plan** — with high confidence, on three independent signals:
 (1) live headers show the Free table's 1000-RPD / 8K-TPM buckets (a Developer
 org would surface 500K/250K in the same headers); (2) neither sibling repo
-records any payment method, credit, or PAYG enablement (the gateway's D011
+records any payment method, credit, or PAYG enablement (the [SIBLING-B]'s D011
 explicitly records "no budget for a paid tier"); (3) `"service_tier":
 "on_demand"` is returned identically on Free (it is not a tier indicator;
 only `flex` marks the paid elevated service). Residual uncertainty: only Groq's
@@ -239,7 +245,7 @@ here is from non-secret provider evidence only, as required.
 (TPD 200K). Splitting: one case ≈ 90–125K tokens = 45–62% of TPD; at most one
 case/day is safe, two is already at/over the cap → a 3–4+ day split run,
 each day fighting 8K TPM on 5–15K-token calls — the exact L007-style fragility
-the gateway engineered around (12 s pacing, 3-attempt backoff). Not a full-run
+the [SIBLING-B] engineered around (12 s pacing, 3-attempt backoff). Not a full-run
 vehicle; **a ONE-CASE canary fits comfortably** (see §15).
 
 ### Developer/PAYG (1K RPM · 250K TPM · 500K RPD · no TPD)
@@ -252,7 +258,7 @@ for this task.
 
 ## 11. Cost calculations (PAYG; current official prices $0.15/M input · $0.60/M output)
 
-Input/output split assumption: 85%/15% — anchored on the gateway's measured
+Input/output split assumption: 85%/15% — anchored on the [SIBLING-B]'s measured
 85-request tool-loop eval (47,350 in / 8,408 out = 84.9/15.1) and consistent
 with the repo's own workload estimate (graph ≈ 46K in / 5K out; judges ≈ 44K
 in / 12K out per case). Reasoning tokens are completion (output-priced).
@@ -284,7 +290,7 @@ human's decision.
   key-dependent variable, so this validation carries to both sibling keys.
 - gpt-oss catalog capabilities under this org's key: `context_window 131072`,
   `max_completion_tokens 65536`, features `tools, json_mode,
-  structured_outputs, reasoning` (gateway's 2026-08-22 capture + today's
+  structured_outputs, reasoning` ([SIBLING-B]'s 2026-08-22 capture + today's
   catalog).
 - **Nothing about agent architecture, tools, prompts, judges, reasoning
   settings, or max-token configuration needs to change for Groq.** The
@@ -319,7 +325,7 @@ dashboard-observed, not API-verifiable; possible unpublished TPD.)
   comparison (forbidden). Confidence high; a console view could make it
   definitive (browser-only, not attempted).
 - **TPD 200K is docs-sourced**, never header-observed (no TPD header exists).
-  The gateway's ~119.5K-token day ran clean under it; today's 9 requests are
+  The [SIBLING-B]'s ~119.5K-token day ran clean under it; today's 9 requests are
   noise. If the real TPD were somehow higher, free-tier feasibility would
   improve — but the documented value is the planning basis.
 - Remaining-day headroom on the shared pool is only partially observable
@@ -380,7 +386,7 @@ Answers to the seven questions:
 7. **First controlled canary?** **Groq free tier on the existing wiring, one
    case** (e.g., case C-1001): ≈ 21–39 requests (2–4% RPD), ≈ 90–125K tokens
    (45–62% TPD), zero code changes, zero new credentials, the exact
-   production path, real-run anchor exists (gateway: 85 requests/55.8K tokens
+   production path, real-run anchor exists ([SIBLING-B]: 85 requests/55.8K tokens
    in ~10.6 min, no 429). Run it on a fresh day (RPD bucket refills
    continuously; TPD resets daily), with stop-on-429 reporting. The canary's
    results then inform the full-run provider decision (Gemini free vs Groq
@@ -396,8 +402,8 @@ methodology change, no sibling modifications, no fallback, nothing purchased.
 | File | Content |
 | --- | --- |
 | `agent-memory/evidence/groq-probe-[SIBLING-A]-2026-09-04.{json,txt}` | Phase 1–3 records + headers (env A) |
-| `agent-memory/evidence/groq-probe-gateway-2026-09-04.{json,txt}` | Phase 1–3 records + headers (env B) |
+| `agent-memory/evidence/groq-probe-[SIBLING-B]-2026-09-04.{json,txt}` | Phase 1–3 records + headers (env B) |
 | `agent-memory/evidence/groq-org-disambiguation-2026-09-04.txt` | the 993 shared-org measurement |
 | `agent-memory/evidence/groq-replay-probe-2026-09-04.txt` | (prior today) strands-level Groq tool/replay validation |
-| Gateway read-only citations | `[SIBLING-B-INTERNAL]/groq-generation-headers.txt`, `[SIBLING-B-INTERNAL].txt` (RPD ladder proof, D012 amendment), `[SIBLING-B-INTERNAL]heldout-eval/[SIBLING-B-INTERNAL]heldout-eval-live-run5.txt` (85-req real-run usage) |
+| [SIBLING-B] read-only citations | `[SIBLING-B-INTERNAL]/groq-generation-headers.txt`, `[SIBLING-B-INTERNAL].txt` (RPD ladder proof, D012 amendment), `[SIBLING-B-INTERNAL]-heldout-eval/[SIBLING-B-INTERNAL]-heldout-eval-live-run5.txt` (85-req real-run usage) |
 | Official docs | console.groq.com/docs: rate-limits (Free/Developer tabs), model/openai/gpt-oss-120b (pricing), errors, billing-faqs, spend-limits, projects, model-permissions, flex-processing, batch |

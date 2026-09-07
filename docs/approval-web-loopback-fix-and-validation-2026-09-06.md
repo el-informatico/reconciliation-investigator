@@ -1,4 +1,10 @@
 # approval/web.py loopback fix + live-browser validation (2026-09-06)
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
+
+> REDACTED 2026-09-07 (privacy pass): sibling-project names and
+> out-of-repo local paths in this report were replaced with neutral tokens
+> ([SIBLING-A]…[SIBLING-J], ~) before publication; originals preserved in
+> the author's private pre-rewrite bundle.
 
 Task: research this machine's loopback-connectivity fix via sibling
 projects (explicitly authorized, read-only, THIS TASK ONLY), apply a
@@ -99,7 +105,7 @@ local-only exposure (CALCULATED; interfaces MEASURED via `ip addr`).
 
 ## 3. The fix (Phase 2a) — MEASURED + DOCUMENTED
 
-`approval/web.py` only (diff: +58/−21 lines against 4f81e7d; the
+`approval/web.py` only (diff: +58/−21 lines against f836966; the
 APPROVE/REJECT/REPLAY handlers, routes, token/session state, and
 EVAL_MODE handling are byte-untouched — C1):
 

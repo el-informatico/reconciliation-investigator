@@ -1,5 +1,5 @@
 """2026-09-06 sensitive-content guard regression tests: the three
-weaknesses found by the e5a2ef0 push-verification pass must not return,
+weaknesses found by the 7a112d0 push-verification pass must not return,
 and the behaviors that were already correct must stay correct.
 
 Every test runs against a THROWAWAY git repository under pytest's
@@ -273,6 +273,12 @@ def test_commit_msg_blocks_ai_attribution(tmp_path):
         "docs/rewrite-execution-plan-2099-01-01.md",
         "docs/backup-chain-investigation-2099-01-01.md",
         "agent-memory/backup-chain-investigation-2099-01-01.md",
+        # the wholesale rule (2026-09-07 history-excision follow-up):
+        # agent-memory/ is local-only — ordinary ledger/report files under
+        # it are deliberately ignored too, superseding the old "class
+        # patterns must not swallow them" expectation
+        "agent-memory/decisions.md",
+        "agent-memory/sensitive-docs-relocation-2026-09-06.md",
     ],
 )
 def test_gitignore_covers_relocated_name_classes(path):
@@ -294,8 +300,10 @@ def test_gitignore_covers_relocated_name_classes(path):
         "docs/SENSITIVE-PLANNING-DOCS-RELOCATED.md",
         "docs/SYSTEM-REFERENCE.md",
         "docs/local-path-ai-reference-audit-and-commit-2026-09-06.md",
-        "agent-memory/sensitive-docs-relocation-2026-09-06.md",
-        "agent-memory/decisions.md",
+        # agent-memory/* entries were removed 2026-09-07: the wholesale
+        # `agent-memory/` rule (history-excision follow-up) deliberately
+        # ignores the entire directory — those paths now belong to the
+        # IGNORED expectation in test_gitignore_covers_relocated_name_classes.
     ],
 )
 def test_gitignore_does_not_swallow_legitimate_files(path):

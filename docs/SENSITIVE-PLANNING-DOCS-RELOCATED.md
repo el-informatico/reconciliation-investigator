@@ -1,4 +1,5 @@
 # Sensitive planning documents relocated outside this repository
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 On 2026-09-06 the following documents were moved OUT of this
 repository's working tree to a local-only directory on the same

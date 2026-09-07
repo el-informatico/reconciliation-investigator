@@ -6,13 +6,13 @@ Task: remove the ground-truth leak channels from the evaluation methodology
 them. No live LLM/API call, no benchmark, no canary was run for this fix; no
 commit, stage, or push was performed.
 
-Execution date: 2026-09-05. Baseline HEAD at task start: `c5f5e13`.
+Execution date: 2026-09-05. Baseline HEAD at task start: `ac1ba3a`.
 
 ---
 
 ## 1. PHASE 0 PROPOSAL (verbatim — the human's review artifact; not edited after implementation began)
 
-### 1a. Current state re-confirmed (HEAD `c5f5e13`, re-read in full this task)
+### 1a. Current state re-confirmed (HEAD `ac1ba3a`, re-read in full this task)
 
 **Item A — the injection.** `evals/run_evals.py:99-102`:
 
@@ -309,7 +309,7 @@ in §1c and landed verbatim.)
 ## 4. ANSWER KEY BYTE-IDENTITY
 
 `git diff --exit-code evals/cases.py` → **empty** (byte-identical to HEAD
-`c5f5e13`, which is also the pre-task state: zero tracked modifications
+`ac1ba3a`, which is also the pre-task state: zero tracked modifications
 existed at task start). The five cases' `seed_scenario` values,
 `expected_output` values, order, and metadata are untouched. Enforced
 permanently by `test_frozen_answer_key_is_byte_identical`
@@ -438,10 +438,10 @@ customers (zero `_`-prefixed keys reachable at HEAD).
 
 ## 10. GIT STATUS — before / after
 
-- **Before** (task start): HEAD `c5f5e1326a13f26835ec6afc4a4c6bead5d0772b`;
+- **Before** (task start): HEAD `ac1ba3a394e7afc85980e49615a9a720aa8b5b4f`;
   0 tracked files modified; 0 staged; 0 stashes; 33 untracked entries
   (pre-existing evidence/report/driver/test files).
-- **After** (completion): HEAD unchanged `c5f5e13`; **5 tracked files
+- **After** (completion): HEAD unchanged `ac1ba3a`; **5 tracked files
   modified** (`evals/run_evals.py`, `tools/legacy_system.py`,
   `tools/modern_system.py`, `tools/seed_data.py`, `tools/transactions.py` —
   exactly the §1c/§3 fix set); **35 untracked** = the same 33 + this report

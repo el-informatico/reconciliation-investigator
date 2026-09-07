@@ -1,4 +1,10 @@
 # Token-workload audit — agents vs judges (READ-ONLY, 2026-09-04)
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
+
+> REDACTED 2026-09-07 (privacy pass): sibling-project names and
+> out-of-repo local paths in this report were replaced with neutral tokens
+> ([SIBLING-A]…[SIBLING-J], ~) before publication; originals preserved in
+> the author's private pre-rewrite bundle.
 
 **Question:** of the ~450K–650K tokens estimated for the full 5-case evaluation,
 how much is consumed by the SYSTEM'S AGENTS (detector / classifier / loop /
@@ -203,7 +209,7 @@ trajectories — the primary measured source), `reconciliation_investigator_eval
 `evals-sequential-2026-09-04.txt`, `evals-sequential-final-2026-09-04.txt`,
 `evals-run3{c,d,e}*.txt`, `evals-run4-official.txt`,
 `verify-full-2026-09-04-run2.txt`, `groq-replay-probe-2026-09-04.txt`,
-`groq-probe-{[SIBLING-A],gateway}-2026-09-04.{json,txt}`,
+`groq-probe-{[SIBLING-A],[SIBLING-B]}-2026-09-04.{json,txt}`,
 `runtime/{consumed_tokens,drafts,tickets}.jsonl` (inventory + sizes;
 consumed_tokens read: gate store, not LLM).
 **Measurement scripts (created OUTSIDE the repo in /tmp, nothing in the repo

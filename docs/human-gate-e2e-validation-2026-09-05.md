@@ -1,4 +1,5 @@
 # Human Gate End-to-End Validation — 2026-09-05
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 Task: P0 human gate integrity + minimal demo surface (human-commissioned;
 architect-gated Tier C, PROCEED-WITH-CONDITIONS C1–C9, gate evidence in

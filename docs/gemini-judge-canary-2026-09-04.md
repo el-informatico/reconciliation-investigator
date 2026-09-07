@@ -1,4 +1,5 @@
 # Gemini judge canary — ONE case, judges on Gemini 3.1 Flash-Lite (2026-09-04)
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 **STATUS: EXECUTED — PASS.** The single planned case ran once
 (`reversal-not-propagated`), agents unchanged on Groq, the four LLM judges

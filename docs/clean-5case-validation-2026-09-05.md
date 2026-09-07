@@ -1,4 +1,5 @@
 # P0-B — First Clean Five-Case Validation (post ground-truth-leak fix)
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 Date: 2026-09-05 · Driver: `evals/gemini_judge_5case.py` · Result: **GO WITH CAVEAT**
 
@@ -109,7 +110,7 @@ Suite results (MEASURED): module 23 passed (18 + 5 new) in 0.94 s; full suite
 ### 1e. Git baseline (0e)
 
 MEASURED before any live call: `main` in sync with `origin/main`, HEAD
-`c5f51326a13f26835ec6afc4a4c6bead5d0772b` (`c5f5e13`, "Add bounded retry for
+`ac1ba3a` [CORRECTED 2026-09-07 — hash typo in the original; refers to pre-rewrite c5f5e13] (`ac1ba3a`, "Add bounded retry for
 Groq parsing failures"); nothing staged; 5 modified tracked files =
 exactly P0-A's uncommitted fix set (`evals/run_evals.py`,
 `tools/legacy_system.py`, `tools/modern_system.py`, `tools/seed_data.py`,
@@ -359,7 +360,7 @@ made or supported.
 
 ## 13. Git baseline and final state
 
-- **Baseline (before this task):** §1e — `main` @ `c5f5e13`, 5 modified tracked
+- **Baseline (before this task):** §1e — `main` @ `ac1ba3a`, 5 modified tracked
   files (P0-A set), 36 untracked paths, nothing staged, `.env`/`uv.lock`
   untouched. Full snapshot + sha256 pins in `preflight.txt`.
 - **Final state (after, MEASURED):** identical tracked-modification set (same

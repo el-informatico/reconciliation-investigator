@@ -1,4 +1,5 @@
 # Case-4 detector "Parsing failed" — read-only root-cause audit (2026-09-04)
+> AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
 **Task class:** READ-ONLY audit. No source/test/config/prompt/tool/benchmark/
 instrumentation/provider changes; no live LLM, benchmark, canary, probe, or
