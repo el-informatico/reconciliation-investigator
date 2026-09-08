@@ -247,7 +247,8 @@ the live benchmark**.
 ## Status
 
 Under active development for the hackathon submission (deadline: Sep 14,
-2026). Built with Ares v2 as the agentic build engine, driven by GLM-5.3.
+2026). Built with an agentic build engine developed in a sibling project,
+driven by a third-party LLM.
 
 ## Evaluation
 
