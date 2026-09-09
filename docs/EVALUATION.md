@@ -3,9 +3,10 @@
 
 **As of 2026-09-06.** This document summarizes what has and has not been
 measured for Reconciliation Investigator. Every figure below is quoted from
-a cited source report and carries a classification tag, with one exception
-introduced by the 2026-09-06 correction pass: §9's offline-suite count was
-re-executed that day. Results exist and are cited; gaps are named as gaps.
+a cited source report and carries a classification tag, with one standing
+exception introduced by the 2026-09-06 correction pass: §9's offline-suite
+count is re-executed directly whenever the suite changes (most recently
+2026-09-09). Results exist and are cited; gaps are named as gaps.
 (DOCUMENTED throughout — the cited source is the authority.)
 
 ## 0. How to read this document
@@ -279,9 +280,8 @@ retry/OTel/infrastructure-token figures.
 
 ## 9. Offline test suite
 
-Most recent count on record: **257 passed** (offline suite re-executed
-2026-09-07, `uv run --locked pytest -q`, with the sensitive-content
-guard regression tests and the probe env-tag choice tests).
+Most recent count on record: **258 passed** (offline suite re-executed
+2026-09-09, `uv run --locked pytest -q`).
 Lineage: 132 → 150 with the leak fix's 18 new tests
 (`docs/eval-ground-truth-leak-fix-2026-09-05.md` §5) → 155 (clean-run
 task, `docs/clean-5case-validation-2026-09-05.md` §1d) → 190 (human-gate
@@ -293,7 +293,10 @@ task, `docs/human-gate-e2e-validation-2026-09-05.md` §8) → 216
 guard regression tests, `tests/test_sensitive_content_guards.py`, the
 guard-hardening commit) → 257 (+ the 6 probe env-tag choice tests,
 `tests/test_probe_groq_env_tag_choices.py`, the env-tag rename
-commit). (257 MEASURED 2026-09-07; lineage DOCUMENTED per the cited
+commit) → 258 (+ the README offline-test-count pin test,
+`tests/test_readme_test_count.py`, the README test-count drift fix —
+the README's "22 offline test files" figure is now enforced by that
+test). (258 MEASURED 2026-09-09; lineage DOCUMENTED per the cited
 docs)
 
 ## 10. Source map
