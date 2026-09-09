@@ -365,7 +365,7 @@ retry/OTel/infrastructure-token figures.
 
 ## 9. Offline test suite
 
-Most recent count on record: **258 passed** (offline suite re-executed
+Most recent count on record: **263 passed** (offline suite re-executed
 2026-09-09, `uv run --locked pytest -q`).
 Lineage: 132 → 150 with the leak fix's 18 new tests
 (`docs/eval-ground-truth-leak-fix-2026-09-05.md` §5) → 155 (clean-run
@@ -381,8 +381,10 @@ guard-hardening commit) → 257 (+ the 6 probe env-tag choice tests,
 commit) → 258 (+ the README offline-test-count pin test,
 `tests/test_readme_test_count.py`, the README test-count drift fix —
 the README's "22 offline test files" figure is now enforced by that
-test). (258 MEASURED 2026-09-09; lineage DOCUMENTED per the cited
-docs)
+test) → 263 (+ the 5 Groq quota-failover resolver tests in
+`tests/test_model_config.py`, the GROQ_API_KEY_2 / GROQ_FORCE_KEY=2
+loader change). (263 MEASURED 2026-09-09; lineage DOCUMENTED per the
+cited docs)
 
 ## 10. Source map
 
