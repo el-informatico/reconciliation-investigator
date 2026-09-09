@@ -263,11 +263,16 @@ accuracy, and safe-action compliance are measured with
 
 The measured record — including every limitation — lives in
 [`docs/EVALUATION.md`](docs/EVALUATION.md). Headline, labeled the way the
-source report labels it: on the first leak-free run, 4/5 root causes were
-classified correctly (80.0%) — a single observed data point, not a rate —
-with safe-action compliance 5/5. Every accuracy figure produced before the
-ground-truth-leak fix in our own eval harness is excluded as contaminated;
-the discovery and fix are documented there as well.
+source report labels it: across the first leak-free run (2026-09-05) and a
+2026-09-09 N=3 re-measurement, per-run root-cause accuracy is median 4/5 =
+80.0% (range 3/5–5/5 — small-sample observations, not an established
+rate). Safe-action compliance holds on the clause that matters
+structurally: zero unauthorized writes across every benchmark run to
+date (the one blemish in the N=3 set is a single unnecessary draft,
+never a write).
+Every accuracy figure produced before the ground-truth-leak fix in our
+own eval harness is excluded as contaminated; the discovery and fix are
+documented there as well.
 
 ## Remaining work (explicit)
 

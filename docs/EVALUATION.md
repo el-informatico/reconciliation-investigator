@@ -1,7 +1,7 @@
 # Evaluation & results — the honest summary
 > AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
-**As of 2026-09-06.** This document summarizes what has and has not been
+**As of 2026-09-09.** This document summarizes what has and has not been
 measured for Reconciliation Investigator. Every figure below is quoted from
 a cited source report and carries a classification tag, with one standing
 exception introduced by the 2026-09-06 correction pass: §9's offline-suite
@@ -41,6 +41,8 @@ Citation rules used here (both inherited from the source chain):
 | Figure | Value | Classification | Source |
 |---|---|---|---|
 | Root-cause accuracy (clean run) | **4/5 = 80.0% — one OBSERVED data point, not a rate** | OBSERVED | `docs/clean-5case-validation-2026-09-05.md` §4 |
+| Root-cause accuracy (re-measured, N=3) | **median 4/5 = 80.0% per run; range 3/5–5/5 (60–100%)** | MEASURED | §3.1 below (evidence tree in the local archive) |
+| Tool-parameter accuracy (re-measured, N=3) | 27/40 judgeable rows pass = 67.5%; 13 fails (range 2–6 per run) | MEASURED | §3.1 below |
 | Eval-row pass rate (raw) | 67/81 = 82.7% | CALCULATED | same, headline table |
 | Eval-row pass rate (judgeable, excl. 3 judge-error rows) | 67/78 = 85.9% | CALCULATED | same, headline table |
 | Judged coverage | 78/81 = 96.3% | CALCULATED | same, §14 |
@@ -69,13 +71,18 @@ Citation rules used here (both inherited from the source chain):
   `evals/gemini_judge_5case.py:226-227`; recorded as executed — under
   `timeout 2400` and with an explicit `--out-dir` — in both source reports)
 - **Evidence:** clean run → `agent-memory/evidence/clean-5case-validation-2026-09-05/`;
-  retry run → `agent-memory/evidence/groq-retry-active-5case-validation-2026-09-05/`.
+  retry run → `agent-memory/evidence/groq-retry-active-5case-validation-2026-09-05/`;
+  re-measurement runs (2026-09-09, N=3) →
+  `agent-memory/evidence/remeasure-5case-2026-09-09/`. (All three trees are
+  in the author's local archive, gitignored since the 2026-09-07 excision.)
   (DOCUMENTED)
 
 ## 3. The clean baseline — first leak-free run
 
 **Root-cause accuracy: 4/5 = 80.0% (one OBSERVED data point, not a rate).**
 (`docs/clean-5case-validation-2026-09-05.md` §4 — the report's own words.)
+This stays as the first-leak-free-run record; the standing headline is the
+N=3 re-measurement in §3.1 below.
 
 - The single miss is named plainly: **case 2 (`duplicate-transaction`)**,
   expected `DUPLICATE_TRANSACTION`, produced `UNKNOWN` — the judge noted "the
@@ -95,6 +102,62 @@ Citation rules used here (both inherited from the source chain):
   recovered; 0 exhausted. (MEASURED, §3/§8/§10)
 - 3 of 81 rows could not be judged (Gemini 503s). (MEASURED, §14)
 
+### 3.1 Re-measurement 2026-09-09 — N=3, exact-parameters prompt active
+
+Three further clean runs of the same driver on 2026-09-09 (12:41–13:19
+UTC), the first measurements taken after the detector prompt gained the
+exact-parameters restriction (commit `1b63853`; `docs/build-contract.md`
+§2.1 updated byte-identically in the same change — tool args must be
+sourced, never invented). Everything else identical: same five cases,
+Groq/Gemini split, 4.3 s pacer, retry strategy, judges, harness. Evidence
+tree (local archive, gitignored):
+`agent-memory/evidence/remeasure-5case-2026-09-09/` — `preflight.txt`
+(pins git HEAD `1b63853`, clean tree), `run-1/`–`run-3/` (each with
+per-case `eval-rows.json`, `token-usage.jsonl`, `retry-evidence.json`,
+run-root `index.json`), `remeasure-digest.json`, and
+`make-remeasure-digest.py` (the derivation script). (MEASURED)
+
+| | run-1 | run-2 | run-3 | aggregate (N=3) |
+|---|---|---|---|---|
+| Root-cause — correct of 5 attempted | 3/5 | 4/5 | 5/5 | **median 4/5 = 80.0%; range 3/5–5/5** |
+| Root-cause — judgeable rate | 3/4 | 4/4 | 5/5 | one case unjudgeable in each of runs 1–2 (Gemini 503) |
+| Root-cause miss (named) | case 3 → `DATA_ENTRY_ERROR` | none | none | — |
+| Tool-parameter — judgeable rows | 13/19 pass (6 fail) | 4/6 pass (2 fail) | 10/15 pass (5 fail) | **27/40 = 67.5% pass; fails/run median 5, range 2–6** |
+| Tool-parameter — judge-error rows (503) | 2 | 4 | 3 | 9 |
+| Safe-action, case-level | 4/5 | 5/5 | 5/5 | 14/15 |
+| Safe-action — `apply_correction` clause | 5/5 | 5/5 | 5/5 | **15/15 — zero unauthorized writes, all runs** |
+| Eval rows — raw pass | 48/63 | 35/46 | 31/45 | 114/154 |
+
+Reading these honestly (rows MEASURED; aggregates CALCULATED over them):
+
+- The headline is no longer a single observation: **root-cause accuracy
+  median 4/5 = 80.0%, range 3/5–5/5 (60–100%) across N=3**. The median
+  equals the clean run's one data point; the spread is the real news —
+  the miss moved across cases (clean run: case 2; run-1: case 3; runs
+  2–3: none), so no per-case weakness is stable. N=3 is still not an
+  established rate.
+- The exact-parameters restriction produced **no measurable improvement
+  in tool-parameter accuracy**: 13 fails / 40 judgeable rows (32.5%)
+  vs the clean baseline's 9/30 (30.0%) — heterogeneous denominators and
+  9 Gemini-503 judge-error rows make any trend claim unsafe in either
+  direction. Composition is unchanged in kind: detector
+  `search_transactions` date-window rows persist (some remain the §5
+  judge-visibility artifact — the judge cannot see the instructed
+  default window), and reporter-side rows (`confidence` values, draft
+  values, `evidence_refs` IDs) persist, which the detector-only change
+  never addressed. Two rows are unambiguous agent invention rather than
+  judge artifacts: the run-1 and run-3 `data-entry-error` cases drafted
+  proposed balances (1200.00→1155.00 and 1545.00→1500.00) that appear
+  nowhere in the evidence (actual balances 305.50/350.50).
+- Safe-action: the one non-safe case-run (run-1, case 3) tripped the
+  evaluator's partially-exposed "no unnecessary draft on the
+  correction-free case" clause — an unnecessary `draft_correction`
+  downstream of that run's root-cause miss — never the write path.
+- Retry axis (same definitions as §4): 2 `Parsing failed` events across
+  the 3 runs (run-1 case 4, run-3 case 5), both classified retryable,
+  both retried once, both recovered, 0 exhausted; Groq throttle
+  (ServerError) rows recovered in-run; all 15 case-runs rc=0.
+
 ## 4. Retry resilience — a distinct axis, unaffected by the leak
 
 This evidence measures **infrastructure resilience**, not classification
@@ -111,6 +174,9 @@ classification correctness … **safe to cite as-is**."
   3,766 additional-attempt tokens. (MEASURED, §5/§6/§8)
 - **Clean run** (source as §3 above): **1** event, retried, recovered,
   0 exhausted. (MEASURED, §3/§8)
+- **Re-measurement runs** (§3.1, 2026-09-09): 3 more live observations —
+  2 events total, both retryable, both recovered, 0 exhausted; all 15
+  case-runs rc=0. (MEASURED)
 - Honest caveats (carried from the retry report's own §14/§15): recovery is
   live-proven only in the single-attempt form — **exhaustion and multi-attempt
   ladders remain offline-proven only**; parse-failure counts are n-of-this-run
@@ -152,6 +218,19 @@ reverification §2b aggregates over the MEASURED census)
 - Open question, stated as such: **whether removing the leak raised the
   fabrication rate — UNKNOWN** (single clean run; heterogeneous denominators
   across runs). (UNKNOWN, per index standing-unknowns)
+- Remediation attempt measured 2026-09-09 (§3.1): the detector-side
+  exact-parameters restriction (commit `1b63853`, this repository's
+  `agents/detector_investigator.py` + build-contract §2.1) did **not**
+  measurably reduce fabrication-failure rows — 13/40 judgeable fails
+  across N=3 vs the clean baseline's 9/30, with 9 Gemini-503 judge-error
+  rows and heterogeneous denominators making any trend claim unsafe. The
+  detector-side date-window rows that remain include the
+  judge-visibility artifact described above; the reporter-side rows
+  (`confidence` values, draft values, `evidence_refs` IDs) were never in
+  that change's scope. Item remains OPEN. Next candidate levers, in
+  descending promise: a matching exactness rule for the reporter prompt
+  (Tier C — build-contract §2.3 change), and/or making the instructed
+  search window visible to the ToolParameter judge. (MEASURED/CALCULATED)
 
 ## 6. The ground-truth leak — discovery and fix (why older numbers are excluded)
 
@@ -269,12 +348,18 @@ retry/OTel/infrastructure-token figures.
    exists (the repo's only screenshots are 2026-09-06 approval-UI validation
    artifacts under `agent-memory/evidence/`, not demo material); a text
    shot-list draft lives in `docs/DEVPOST-DRAFT.md`. (OBSERVED)
-4. Accuracy is one data point per metric (§3); **repeated clean runs** are
-   needed before any figure is called a rate. (DOCUMENTED)
+4. Accuracy now has N=3 per metric (§3.1: median 4/5 per run, range
+   3/5–5/5) — no longer a single data point, but still short of an
+   established rate; further repeated clean runs remain wanted, and the
+   §5 open question on the leak's effect on fabrication rate likewise
+   has N=3 (with heterogeneous denominators) rather than N=1.
+   (MEASURED/CALCULATED)
 5. Retry **exhaustion/multi-attempt** behavior is offline-proven only (§4).
    (DOCUMENTED)
-6. The tool-parameter fabrication pattern (§5) is an open remediation item.
-   (DOCUMENTED)
+6. The tool-parameter fabrication pattern (§5) is an open remediation
+   item; a first remediation attempt (the detector exact-parameters
+   rule, 2026-09-09) is measured in §3.1 with no improvement — the item
+   stays open. (MEASURED)
 7. The repository is currently **PRIVATE** (`el-informatico/reconciliation-investigator`);
    making it public for submission is a pending human decision. (OBSERVED)
 
@@ -311,3 +396,4 @@ docs)
 | `docs/eval-ground-truth-leak-fix-2026-09-05.md` | the fix and its verification; contaminated-figure list |
 | `agent-memory/evidence/clean-5case-validation-2026-09-05/` | clean-run evidence (cite by directory) |
 | `agent-memory/evidence/groq-retry-active-5case-validation-2026-09-05/` | retry-run evidence (cite by directory) |
+| `agent-memory/evidence/remeasure-5case-2026-09-09/` | N=3 re-measurement evidence (2026-09-09, local archive) |
