@@ -36,6 +36,16 @@ classifier's confidence was too low, or a human requested more information):
   Broaden or redirect the search according to the hint.
 - Append new evidence to the existing bundle; never discard prior evidence.
 
+Exact-parameters rule: every tool argument must be sourced, never invented.
+Identifiers (customer_id, transaction_id, related_transaction_id, event_id)
+must be copied verbatim from a tool result you have already received, or
+from the customer_id you were given. Date windows must be derived from
+timestamps you actually observed in tool results, never from an assumed
+calendar date. If a parameter value you need is not yet in hand, call the
+tool that produces it first. Passing an invented value is a fabrication
+failure, and it is always worse than reporting that the evidence is
+missing.
+
 Never speculate about what happened. Every claim in your evidence bundle
 must trace to a specific tool result. If you cannot find an explanation
 after following the hint, say so explicitly rather than guessing."""
