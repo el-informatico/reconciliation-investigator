@@ -1,0 +1,52 @@
+# reconciliation-investigator — offline CI (hermetic, no secrets).
+#
+# Mirrors scripts/verify.sh steps 4-5 ONLY: dependency install from the
+# committed lockfile + the offline pytest suite (the same
+# `uv run --locked pytest -q` as verify.sh step 5 / README Running).
+#
+# verify.sh step 6 (EVAL_MODE=1 evals/run_evals.py) makes LIVE Groq API
+# calls and consumes paid quota; the Gemini-judge drivers
+# (evals/gemini_judge_5case and the canaries) are live too. NO live step
+# ever belongs in CI: this workflow must stay hermetic — no API keys, no
+# secrets, no network use beyond PyPI for the locked sync. Steps 1-3 of
+# verify.sh (preflight, guards, advisory PyPI freshness) are dev-machine
+# concerns and are likewise out of scope here; the guards run locally via
+# the git pre-commit hook (core.hooksPath=scripts/hooks).
+#
+# Actions are pinned by commit SHA with a version comment — the uv docs'
+# stated best practice, and setup-uv no longer publishes moving major
+# tags. Bumping either pin is a deliberate act: verify the new SHA, bump,
+# commit. SHAs below were verified against the GitHub API on 2026-09-09.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege; no secrets are needed by any step.
+permissions:
+  contents: read
+
+# Superseded runs on the same ref don't waste CI minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-tests:
+    name: offline suite (uv sync --locked + pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install uv (pinned) with Python 3.13
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: "3.13"
+      - name: Install dependencies from the committed lockfile
+        run: uv sync --locked
+      - name: Run the offline test suite
+        run: uv run --locked pytest -q

@@ -1,5 +1,7 @@
 # Reconciliation Investigator
 
+[![CI](https://github.com/el-informatico/reconciliation-investigator/actions/workflows/ci.yml/badge.svg)](https://github.com/el-informatico/reconciliation-investigator/actions/workflows/ci.yml)
+
 Built for the [Agents for Humans](https://agentsforhumans.devpost.com/) hackathon — Professional Agents track — on the [Strands Agents SDK](https://strandsagents.com/).
 
 ## What this is
@@ -151,8 +153,10 @@ and turn an APPROVE/REJECT into a `GateDecision` for the deterministic
 gate; neither holds any authority of its own. Still explicitly out of
 scope for the demo per §2.4 (a scoping decision, not a silent omission):
 authentication for the approver, multi-case queue management, and audit
-search. AWS Bedrock AgentCore deployment (`deploy/`) remains a
-documented placeholder in this pass.
+search. AWS Bedrock AgentCore deployment (`deploy/`) remains unimplemented
+in this pass — `deploy/README.md` carries the concrete deployment plan
+(entrypoint, credentials, EVAL_MODE decision) in place of the earlier bare
+placeholder.
 
 ## Repo structure
 
@@ -162,6 +166,7 @@ reconciliation-investigator/
 ├── LICENSE                      # Apache 2.0
 ├── pyproject.toml / uv.lock     # uv project (no requirements.txt)
 ├── CLAUDE.md                    # build-governance rules
+├── .github/workflows/ci.yml     # offline CI: uv sync --locked + pytest (no live steps)
 ├── agents/
 │   ├── model.py                 # Groq OpenAIModel wiring: openai/gpt-oss-120b
 │   ├── retry.py                 # narrow retry: Groq "Parsing failed" only
@@ -202,7 +207,7 @@ reconciliation-investigator/
 │   ├── EVALUATION.md            # honest results & limitations
 │   ├── DEVPOST-DRAFT.md         # submission description draft
 │   └── … dated validation / audit reports
-├── deploy/                      # README-only placeholder (AgentCore, deferred)
+├── deploy/                      # AgentCore deployment PLAN — documented, not implemented
 └── runtime/                     # gitignored stores: drafts.jsonl · tickets.jsonl · overrides.json · audit_log.jsonl · consumed_tokens.jsonl · rejected_calls.jsonl
 ```
 
