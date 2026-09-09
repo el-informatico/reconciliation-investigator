@@ -34,6 +34,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+from strands.models.model import Model
 from strands.models.openai import OpenAIModel
 from strands.types.exceptions import ModelThrottledException
 
@@ -111,10 +112,19 @@ def _resolve_groq_api_keys() -> list[str]:
     return chain
 
 
-class KeyRotatingModel:
+class KeyRotatingModel(Model):
     """Pass-through delegating wrapper over one OpenAIModel per Groq
     key, in chain order (same delegation pattern as the observation
     wrapper in evals/token_canary.py).
+
+    A strands `Model` subclass by design: the eval harness (and the SDK
+    generally) isinstance-checks `Model` — strands_evals' evaluator
+    to_dict() serializes a `Model` to its model_id via `.config`, and a
+    non-Model wrapper crashed experiment.to_file() with "Object of type
+    KeyRotatingModel is not JSON serializable" (live 2026-09-09). The
+    `config` property below returns the ACTIVE inner model's config
+    (model_id + params only — the OpenAI client consumes client_args,
+    so no key material ever appears in it).
 
     On a 429 throttle (ModelThrottledException) from the current key,
     advance to the next key and retry the same stream there — forward
@@ -129,6 +139,12 @@ class KeyRotatingModel:
         self._models = list(models)
         self._index = 0
         self.rotations = 0  # observability: count, never which key
+
+    @property
+    def config(self) -> dict[str, Any]:
+        """The ACTIVE inner model's config dict (model_id, params — no
+        credentials: the OpenAI client consumed client_args)."""
+        return self._models[self._index].config
 
     def __getattr__(self, name: str) -> Any:
         # Only reached for attributes Python did not find on the wrapper;

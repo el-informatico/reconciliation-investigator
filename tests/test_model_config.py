@@ -222,3 +222,26 @@ def test_get_model_wraps_chain_with_rotation_for_multiple_keys(tmp_path, monkeyp
     # exposes model_id through config, not as a public attribute).
     assert built.get_config().get("model_id") == model_module.MODEL_ID
     assert len(built._models) == 3
+
+
+def test_rotating_wrapper_is_a_strands_model_and_serializes_like_one(tmp_path, monkeypatch):
+    # Regression (live 2026-09-09): strands_evals evaluator.to_dict()
+    # serializes a Model via isinstance + .config -> model_id; a wrapper
+    # that is not a Model crashed experiment.to_file() with
+    # "Object of type KeyRotatingModel is not JSON serializable".
+    import json
+    from strands.models.model import Model
+
+    monkeypatch.setattr(model_module, "REPO_ROOT", tmp_path)  # no .env
+    monkeypatch.setenv("GROQ_API_KEY", "dummy-key-1")
+    monkeypatch.setenv("GROQ_API_KEY_2", "dummy-key-2")
+    monkeypatch.delenv("GROQ_API_KEY_3", raising=False)
+    monkeypatch.delenv("GROQ_FORCE_KEY", raising=False)
+    built = get_model()
+    assert isinstance(built, Model)
+    assert isinstance(built.config, dict)
+    # The strands_evals _get_model_id path, exercised end-to-end through
+    # plain json (no key material may appear in the serialized form).
+    serialized = json.dumps({"model_id": built.config.get("model_id", "")})
+    assert model_module.MODEL_ID in serialized
+    assert "dummy-key" not in serialized

@@ -365,7 +365,7 @@ retry/OTel/infrastructure-token figures.
 
 ## 9. Offline test suite
 
-Most recent count on record: **269 passed** (offline suite re-executed
+Most recent count on record: **270 passed** (offline suite re-executed
 2026-09-09, `uv run --locked pytest -q`).
 Lineage: 132 → 150 with the leak fix's 18 new tests
 (`docs/eval-ground-truth-leak-fix-2026-09-05.md` §5) → 155 (clean-run
@@ -386,8 +386,11 @@ test) → 263 (+ the 5 Groq quota-failover resolver tests in
 loader change) → 269 (+ the 429-rotation extension: chain resolver
 tests for GROQ_API_KEY -> GROQ_API_KEY_2 -> GROQ_API_KEY_3 with
 GROQ_FORCE_KEY=2|3, KeyRotatingModel throttle-rotation tests, and the
-single-key bare-model pin; `agents/model.py`). (269 MEASURED
-2026-09-09; lineage DOCUMENTED per the cited docs)
+single-key bare-model pin; `agents/model.py`) → 270 (+ the
+KeyRotatingModel strands-Model-subclass serialization regression test,
+after a live verify.sh step-6 run crashed at experiment.to_file() with
+"Object of type KeyRotatingModel is not JSON serializable"). (270
+MEASURED 2026-09-09; lineage DOCUMENTED per the cited docs)
 
 ## 10. Source map
 
