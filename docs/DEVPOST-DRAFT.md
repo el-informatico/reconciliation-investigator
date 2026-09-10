@@ -118,9 +118,12 @@ invalidate your own headline numbers.
   (`approval/web.py`), both driving the same deterministic
   `orchestrator/human_gate.py` gate, both live-validated (the CLI end-to-end
   on one case with a live investigation; the web screen via real
-  headless-browser form submissions). Honest bounds: single-case surface,
-  EVAL_MODE-only, approver identity unauthenticated by design,
-  headed-browser interaction untested.
+  headless-browser form submissions). Honest bounds: single-case decision
+  surface (plus a read-only all-cases summary page), EVAL_MODE-only,
+  approver access token-gated on the web screen since 2026-09-10 (one
+  shared per-session token, no per-user accounts; the terminal flow's
+  approver identity remains a free string), headed-browser interaction
+  untested.
 - The standalone architecture-diagram artifact required by the hackathon
   rules — created: `docs/architecture-diagram.png` (the upload copy;
   `docs/architecture-diagram-2026-09-06.md` holds the Mermaid source and

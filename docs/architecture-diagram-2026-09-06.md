@@ -132,8 +132,10 @@ provenance section below.
   are separate stores states and are drawn separately.
 - **Deliberate omissions** (kept in prose/README instead, for diagram
   readability): the narrow Groq "Parsing failed" retry wrapper
-  (`agents/retry.py`), the in-memory web-session state, the §2.4
-  demo-scope items (approver auth, multi-case queue, audit search), and
+  (`agents/retry.py`), the in-memory web-session state, the remaining
+  §2.4 demo-scope items (per-user accounts, multi-case queue, audit
+  search — approver auth was implemented 2026-09-10: per-session access
+  token + CSRF nonce, not drawn), and
   the AgentCore deployment placeholder (`deploy/`). The runtime stores
   `overrides.json` (what `apply_correction` writes in eval mode) is
   summarized as "the modern-system record" on the apply node.

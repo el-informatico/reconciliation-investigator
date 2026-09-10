@@ -1,12 +1,12 @@
 # Evaluation & results — the honest summary
 > AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
-**As of 2026-09-09.** This document summarizes what has and has not been
+**As of 2026-09-10.** This document summarizes what has and has not been
 measured for Reconciliation Investigator. Every figure below is quoted from
 a cited source report and carries a classification tag, with one standing
 exception introduced by the 2026-09-06 correction pass: §9's offline-suite
 count is re-executed directly whenever the suite changes (most recently
-2026-09-09). Results exist and are cited; gaps are named as gaps.
+2026-09-10). Results exist and are cited; gaps are named as gaps.
 (DOCUMENTED throughout — the cited source is the authority.)
 
 ## 0. How to read this document
@@ -327,10 +327,17 @@ retry/OTel/infrastructure-token figures.
    LLM calls) plus Windows-side headless Edge/Chrome rendering and a scripted
    HTTP APPROVE + replay refusal against the committed default bind
    (`docs/approval-web-loopback-fix-and-validation-2026-09-06.md` §4/§10).
-   Demo scope unchanged and stated, not silent: single-case surface;
-   approver identity unauthenticated by design (a free string); multi-case
-   queue management and audit search out of scope per
-   `docs/build-contract.md` §2.4 — which prescribes exactly this minimum
+   Demo scope stated, not silent: single-case decision surface, plus a
+   strictly read-only all-cases summary page (`/summary`) since
+   2026-09-10; web approver identity token-gated since the 2026-09-10
+   §2.4 amendment (per-session approver access token, HTTP Basic with
+   constant-time comparison, CSRF nonces on every decision form, the
+   authenticated username recorded in both audit rows; bounds stated:
+   one shared token per session, no per-user accounts), while the CLI
+   approver identity remains a free string by design (terminal access is
+   its authentication); per-user accounts, multi-case queue management
+   and audit search out of scope per `docs/build-contract.md` §2.4 as
+   amended — which prescribes exactly this minimum
    interface, so this entry's earlier "§2.4 deferral" attribution was wrong
    (§2.4 defers auth/queue/search, not the surface); the spine is
    EVAL_MODE-only (dev signing key public by design; production requires
@@ -365,8 +372,8 @@ retry/OTel/infrastructure-token figures.
 
 ## 9. Offline test suite
 
-Most recent count on record: **270 passed** (offline suite re-executed
-2026-09-09, `uv run --locked pytest -q`).
+Most recent count on record: **287 passed** (offline suite re-executed
+2026-09-10, `uv run --locked pytest -q`).
 Lineage: 132 → 150 with the leak fix's 18 new tests
 (`docs/eval-ground-truth-leak-fix-2026-09-05.md` §5) → 155 (clean-run
 task, `docs/clean-5case-validation-2026-09-05.md` §1d) → 190 (human-gate
@@ -390,7 +397,18 @@ single-key bare-model pin; `agents/model.py`) → 270 (+ the
 KeyRotatingModel strands-Model-subclass serialization regression test,
 after a live verify.sh step-6 run crashed at experiment.to_file() with
 "Object of type KeyRotatingModel is not JSON serializable"). (270
-MEASURED 2026-09-09; lineage DOCUMENTED per the cited docs)
+MEASURED 2026-09-09; lineage DOCUMENTED per the cited docs) → 287
+(+17 approval-surface tests, 2026-09-10 POINT 6 design-polish pass:
+5 for the read-only `/summary` page — empty-store census with
+ground-truth-marker pin, store reflection, override drift-flip, HTML
+escaping, HTTP route read-only/linked/404 — and 12 for approver
+authentication — 401-with-challenge, same-length wrong token,
+empty-username refusal, unauthorized-POST-leaves-store-untouched,
+authenticated attribution in both audit rows, `/summary` behind auth,
+embedded no-challenge posture, compare_digest mechanism pin,
+missing/wrong CSRF nonce 400s, fail-closed `main()` token default,
+explicit `--auth-token` not echoed) (287 MEASURED 2026-09-10; lineage
+DOCUMENTED per the cited docs)
 
 ## 10. Source map
 

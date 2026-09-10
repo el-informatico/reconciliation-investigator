@@ -161,9 +161,23 @@ On REQUEST_MORE_INFO: route back to `detector_investigator` with the
 
 Minimum viable interface for the hackathon demo: a single-case approval
 screen (case summary, evidence, proposed correction, Approve/Reject
-buttons). Multi-case queue management, auth, and audit search are out of
-scope for the demo — note this explicitly in the README as a scoping
-decision, not a silent omission.
+buttons), plus a strictly read-only multi-case summary page over the
+seeded cases.
+
+AMENDED 2026-09-10 (human-approved Tier C change, architect-gated;
+decision D-2026-09-10-01): the original text scoped auth out entirely
+("Multi-case queue management, auth, and audit search are out of scope
+for the demo"). The web screen now requires approver authentication: a
+per-session approver access token (HTTP Basic, single shared token,
+constant-time comparison; the authenticated username is recorded as the
+audited approver identity) plus a per-session CSRF nonce on every
+decision form. The screen never serves without them.
+
+Still out of scope for the demo (unchanged): per-user accounts,
+multi-case queue management, and audit search — note these explicitly in
+the README as a scoping decision, not a silent omission. The terminal
+approval flow (`approval/cli.py`) is unchanged: terminal access is its
+authentication, and its approver identity remains a free string.
 ```
 
 ### 2.5 `correction_executor` (not an LLM agent)

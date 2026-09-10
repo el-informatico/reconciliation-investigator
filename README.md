@@ -150,9 +150,17 @@ tokens and a full audit trail. The surface is a terminal flow
 (`python -m approval.cli`) plus a loopback-only browser screen
 (`python -m approval.web`) — both render the case + proposed correction
 and turn an APPROVE/REJECT into a `GateDecision` for the deterministic
-gate; neither holds any authority of its own. Still explicitly out of
-scope for the demo per §2.4 (a scoping decision, not a silent omission):
-authentication for the approver, multi-case queue management, and audit
+gate; neither holds any authority of its own. The browser screen also
+serves a strictly read-only all-cases summary page (`/summary`) over the
+five seeded cases. Approver authentication was added to the browser
+screen on 2026-09-10 (§2.4 amended, Tier C): every request requires the
+per-session approver access token (HTTP Basic, constant-time; the
+authenticated username is the audited approver), every decision form
+carries a per-session CSRF nonce, and the screen never serves without
+them — bounds stated, not silent: one shared token per session, no
+per-user accounts. Still explicitly out of scope for the demo per §2.4
+(a scoping decision, not a silent omission): per-user accounts,
+multi-case queue management, and audit
 search. AWS Bedrock AgentCore deployment (`deploy/`) remains unimplemented
 in this pass — `deploy/README.md` carries the concrete deployment plan
 (entrypoint, credentials, EVAL_MODE decision) in place of the earlier bare
@@ -240,7 +248,9 @@ uv run --frozen --with google-genai==2.22.0 python -m evals.gemini_judge_canary 
 # executor, audit, and replay rejection are deterministic Python)
 uv run --locked python -m approval.cli --customer C-1004 --demo
 # loopback browser approval screen (renders the pending draft; the
-# deterministic Python gate stays authoritative; demo scope — no auth)
+# deterministic Python gate stays authoritative; approver authentication:
+# a per-session access token is generated and printed at startup — enter
+# it with your name at the browser prompt)
 uv run --locked python -m approval.web --customer C-1004
 ```
 
@@ -279,8 +289,10 @@ documented there as well.
 - **End-to-end human-approval demo surface: BUILT (2026-09-05 pass),
   live-validated once via the CLI** (see
   [`docs/human-gate-e2e-validation-2026-09-05.md`](docs/human-gate-e2e-validation-2026-09-05.md)).
-  Remaining surface gaps: the approver identity is unauthenticated per
-  the §2.4 demo scope. The browser screen is live-browser validated in
+  Remaining surface gaps: per-user approver accounts, multi-case queue
+  management, and audit search (§2.4 scoping). The web screen has been
+  approver-token-gated since 2026-09-10 (§2.4 amendment) — the terminal
+  flow's approver identity remains a free string by design. The browser screen is live-browser validated in
   the dev environment (2026-09-06: real Chromium over `[::1]`, plus
   Windows-side headless Edge/Chrome rendering and a scripted APPROVE
   against the default `127.0.0.1` bind — see
