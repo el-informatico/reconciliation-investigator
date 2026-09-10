@@ -8,6 +8,12 @@ the deterministic spine (run_human_gate, then — on APPROVE —
 graph.apply_gate_approval); a replay button re-presents the consumed
 capability to the executor to show it refused. The page holds NO
 authority of its own — it is a view plus a button wired to the gate.
+A second, strictly read-only page (/summary) shows all five seeded
+cases' state at a glance: one row per case, sourced from the live
+runtime store and the seed systems only — never from the eval case
+definitions (ground-truth discipline, docs/EVALUATION.md §6) — with no
+decision forms, because acting on a case stays on its own single-case
+screen (docs/build-contract.md §2.4).
 
 Demo boundary (stated, not silent): loopback only — 127.0.0.1 (the
 committed default) or ::1; this build refuses any other --bind — and
@@ -84,6 +90,10 @@ PAGE_SHELL = """<!DOCTYPE html>
   button { font: inherit; background: #245f9e; color: #ffffff; border: 1px solid #1c4a7c; border-radius: 6px; padding: 0.45rem 1.1rem; cursor: pointer; }
   button[disabled] { background: #aeb8c2; border-color: #98a3ae; cursor: not-allowed; }
   input[type="text"] { font: inherit; padding: 0.35rem 0.5rem; border: 1px solid #c3ccd6; border-radius: 6px; background: #ffffff; color: #16202b; width: 22rem; max-width: 100%; }
+  a { color: #245f9e; }
+  table.summary { border-collapse: collapse; width: 100%; margin: 0.5rem 0; }
+  table.summary th, table.summary td { border: 1px solid #cdd5df; padding: 0.3rem 0.55rem; text-align: left; font-size: 0.95em; }
+  table.summary th { background: #e8ecf1; }
   ul { margin: 0.25rem 0; padding-left: 1.25rem; }
   footer { color: #5b6774; font-size: 0.85rem; margin-top: 2rem; border-top: 1px solid #cdd5df; padding-top: 0.75rem; }
 </style>
@@ -229,6 +239,104 @@ def _log_card(state: dict) -> str:
     )
 
 
+def summarize_cases() -> list[dict]:
+    """One row per seeded case (sorted), for the read-only /summary page.
+    Sourced from the frozen seed + the runtime stores ONLY (latest
+    ticket, pending draft, applied overrides) — never from the eval case
+    definitions or seed annotations, so no ground-truth label can reach
+    the page (leak discipline, docs/EVALUATION.md §6). The modern side is
+    read through effective_modern_record() so an APPLIED correction
+    override flips drift to False — the same read-your-writes overlay the
+    read tools use, never a parallel truth."""
+    seed = seed_data.load_seed()
+    rows: list[dict] = []
+    for case_id in sorted(seed["modern_system"]):
+        legacy = seed["legacy_system"].get(case_id, {})
+        modern = seed_data.effective_modern_record(case_id)
+        ticket = latest_ticket(case_id)
+        draft = latest_pending_draft(case_id)
+        rows.append({
+            "case_id": case_id,
+            "drift": (
+                legacy.get("BALANCE") != modern.get("balance")
+                or legacy.get("STATUS") != modern.get("status")
+            ),
+            "legacy_balance": legacy.get("BALANCE"),
+            "modern_balance": modern.get("balance"),
+            "status_legacy": legacy.get("STATUS"),
+            "status_modern": modern.get("status"),
+            "ticket": (
+                {
+                    "ticket_id": ticket.get("ticket_id", ""),
+                    "root_cause": ticket.get("root_cause", ""),
+                    "confidence": ticket.get("confidence"),
+                    "status": ticket.get("status", ""),
+                }
+                if ticket
+                else None
+            ),
+            "pending_draft": (
+                {
+                    "draft_id": draft.get("draft_id", ""),
+                    "field": draft.get("field", ""),
+                    "current_value": draft.get("current_value"),
+                    "proposed_value": draft.get("proposed_value"),
+                }
+                if draft
+                else None
+            ),
+        })
+    return rows
+
+
+def _summary_section(rows: list[dict], active_case_id: str) -> str:
+    """The /summary card: a read-only table, one row per seeded case —
+    every dynamic value html.escape()d like every other card. NO forms:
+    decisions happen only on a case's own single-case screen."""
+    cells: list[str] = []
+    for row in rows:
+        ticket = row["ticket"]
+        draft = row["pending_draft"]
+        mark = " <strong>(this screen)</strong>" if row["case_id"] == active_case_id else ""
+        root_cause = (
+            f"{_esc(ticket['root_cause'])} (confidence {_value(ticket['confidence'])})"
+            if ticket
+            else '<span class="muted">no ticket yet</span>'
+        )
+        ticket_status = _esc(ticket["status"]) if ticket else "—"
+        pending = (
+            f"{_esc(draft['field'])}: {_value(draft['current_value'])}"
+            f" -&gt; {_value(draft['proposed_value'])}"
+            if draft
+            else '<span class="muted">none</span>'
+        )
+        drift_cell = (
+            '<td class="bad">drift</td>' if row["drift"] else '<td class="ok">aligned</td>'
+        )
+        cells.append(
+            f"<tr><td><code>{_esc(row['case_id'])}</code>{mark}</td>{drift_cell}"
+            f"<td>{root_cause}</td><td>{ticket_status}</td><td>{pending}</td></tr>"
+        )
+    return (
+        '<section class="card"><h2>All five seed cases — read-only overview</h2>'
+        '<table class="summary">'
+        "<thead><tr><th>case</th><th>systems</th>"
+        "<th>latest root cause</th><th>ticket status</th>"
+        "<th>pending correction</th></tr></thead>"
+        f"<tbody>{''.join(cells)}</tbody></table>"
+        '<p class="muted">read live from the runtime store on every render; acting on a '
+        "case happens on its own single-case screen (multi-case queue management "
+        "remains out of scope, docs/build-contract.md §2.4)</p>"
+        '<p><a href="/">back to this screen&rsquo;s case</a></p>'
+        "</section>"
+    )
+
+
+def render_summary(active_case_id: str) -> str:
+    """The /summary page: one read-only card over summarize_cases()."""
+    return PAGE_SHELL.replace("__BODY__", _summary_section(summarize_cases(), active_case_id))
+
+
 def _error_card(message: str) -> str:
     return (
         '<section class="card error-card"><h2>Action failed</h2>'
@@ -246,7 +354,8 @@ def render_page(case_id: str, state: dict, error: str | None = None) -> str:
     # exists, else the latest ticket for the case.
     ticket = ticket_for_draft(case_id, str(draft.get("draft_id", ""))) if draft else latest_ticket(case_id)
     body = (
-        (_error_card(error) if error else "")
+        '<p><a href="/summary">all five seed cases — read-only overview</a></p>'
+        + (_error_card(error) if error else "")
         + _case_card(case_id, ticket)
         + _correction_card(case_id, draft)
         + _decision_card(draft)
@@ -303,7 +412,17 @@ def _make_handler(case_id: str, approver: str, state: dict, lock: threading.Lock
         def do_GET(self) -> None:
             try:
                 with lock:
-                    if urllib.parse.urlsplit(self.path).path != "/":
+                    path = urllib.parse.urlsplit(self.path).path
+                    if path == "/summary":
+                        # Read-only overview of all five seeded cases; the
+                        # same session, lock, and (once auth lands) the
+                        # same access gate as the decision page.
+                        self._send(
+                            200, render_summary(case_id).encode("utf-8"),
+                            "text/html; charset=utf-8",
+                        )
+                        return
+                    if path != "/":
                         self._send(404, b"not found\n", "text/plain; charset=utf-8")
                         return
                     self._send_page()

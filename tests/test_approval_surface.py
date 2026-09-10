@@ -83,6 +83,65 @@ def test_web_execution_and_replay_cards_render_from_session_state() -> None:
     assert "already consumed" in page
 
 
+# --- read-only multi-case summary (/summary) ---
+
+
+def test_summary_lists_all_five_seed_cases_empty_store() -> None:
+    rows = web.summarize_cases()
+    assert [row["case_id"] for row in rows] == [
+        "C-1001", "C-1002", "C-1003", "C-1004", "C-1005",
+    ]
+    # every seeded case starts drifted, with nothing investigated yet
+    assert all(row["drift"] for row in rows)
+    assert all(row["ticket"] is None and row["pending_draft"] is None for row in rows)
+    page = web.render_summary("C-1001")
+    assert "All five seed cases" in page
+    assert "<form" not in page  # read-only: no decision forms, nothing to submit
+    # ground-truth discipline: with an empty store, no eval-case label,
+    # seed annotation, or expected-output marker may appear on the page
+    for marker in ("REVERSAL_NOT_PROPAGATED", "DUPLICATE_TRANSACTION", "_comment", "expected_"):
+        assert marker not in page
+
+
+def test_summary_reflects_ticket_and_pending_draft_from_the_store() -> None:
+    _draft_and_ticket()  # C-1001: draft balance 1250->1500 + ticket REVERSAL_NOT_PROPAGATED
+    rows = {row["case_id"]: row for row in web.summarize_cases()}
+    ticket = rows["C-1001"]["ticket"]
+    assert ticket["root_cause"] == "REVERSAL_NOT_PROPAGATED"
+    assert ticket["confidence"] == 0.92
+    assert ticket["status"] == "open"
+    draft = rows["C-1001"]["pending_draft"]
+    assert draft["field"] == "balance"
+    assert draft["current_value"] == 1250.0
+    assert draft["proposed_value"] == 1500.0
+    assert all(rows[c]["ticket"] is None for c in ("C-1002", "C-1003", "C-1004", "C-1005"))
+
+
+def test_summary_drift_flips_false_only_after_an_applied_override() -> None:
+    rows = {row["case_id"]: row for row in web.summarize_cases()}
+    assert rows["C-1001"]["drift"] is True  # seed: legacy 1500.0 vs modern 1250.0
+    assert rows["C-1001"]["modern_balance"] == 1250.0
+    # the executor's own store write, layered exactly as the read tools do
+    seed_data.write_override("C-1001", "balance", 1500.0, "2026-09-10T12:00:00Z")
+    rows = {row["case_id"]: row for row in web.summarize_cases()}
+    assert rows["C-1001"]["drift"] is False
+    assert rows["C-1001"]["modern_balance"] == 1500.0
+    assert rows["C-1002"]["drift"] is True  # other cases untouched
+
+
+def test_summary_escapes_untrusted_ticket_text() -> None:
+    draft = draft_correction("C-1003", "balance", 4050.00, 4200.00, "sync lag evidence")
+    # root_cause is a free string through the store AND a field the
+    # summary table renders — the honest attack surface for this test
+    create_case_ticket(
+        "C-1003", "case summary", "<script>alert('root')</script> & \"q\"", 0.9,
+        [], draft["draft_id"],
+    )
+    page = web.render_summary("C-1003")
+    assert "<script>" not in page
+    assert "&lt;script&gt;" in page
+
+
 # --- web screen HTTP layer (real sockets over ::1; IPv4 loopback is
 # --- unreachable from this environment's shell — see module docstring) ---
 
@@ -207,6 +266,26 @@ def test_http_layer_second_approve_is_refused() -> None:
         error_page = excinfo.value.read().decode()
         assert "cannot approve" in error_page
         assert "no pending correction draft" in error_page
+    finally:
+        _stop(server)
+
+
+def test_http_layer_summary_route_is_served_read_only_and_linked() -> None:
+    _draft_and_ticket()
+    server, url = _http_server()
+    try:
+        status, summary = _get(url + "summary")
+        assert status == 200
+        for case_id in ("C-1001", "C-1002", "C-1003", "C-1004", "C-1005"):
+            assert case_id in summary
+        # the filed ticket's STORE content shows; nothing else is fabricated
+        assert "REVERSAL_NOT_PROPAGATED" in summary
+        assert "<form" not in summary  # read-only pinned at the HTTP layer too
+        status, page = _get(url)
+        assert status == 200 and 'href="/summary"' in page
+        with pytest.raises(urllib.error.HTTPError) as excinfo:  # unknown paths still 404
+            _get(url + "nope")
+        assert excinfo.value.code == 404
     finally:
         _stop(server)
 
