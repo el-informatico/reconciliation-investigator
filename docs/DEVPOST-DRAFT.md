@@ -2,8 +2,9 @@
 
 **Status: DRAFT text for the submission form. Nothing here has been submitted;
 no demo video exists.** Built for paste-in use field by field. Keep the pitch
-text free of unlabeled numbers: every measured figure lives in
-[`docs/EVALUATION.md`](EVALUATION.md), which is linked rather than restated.
+text free of unlabeled numbers: every measured figure quoted below is taken
+from [`docs/EVALUATION.md`](EVALUATION.md) (as of 2026-09-09), which remains
+the authority for every number.
 
 ---
 
@@ -24,8 +25,9 @@ through transaction history, find the root cause, document it, and only then
 
 **Reconciliation Investigator** does the investigation autonomously and
 produces a complete, evidence-backed case file. What makes it different is not
-the investigation quality (though it is measured and published honestly — see
-[`docs/EVALUATION.md`](EVALUATION.md)) — it is the **safety architecture**:
+the investigation quality (measured and published honestly: root-cause
+accuracy median 4/5 = 80.0% per run across N=3 clean runs, range 3/5–5/5 —
+see [`docs/EVALUATION.md`](EVALUATION.md)) — it is the **safety architecture**:
 
 **The agent can investigate the money. It cannot touch the money.**
 
@@ -38,7 +40,9 @@ write path does not exist for it. That invariant is enforced three
 independent ways: tool registration sets asserted by tests, a mechanical
 grep tripwire wired into both the build and the pre-commit hook, and an
 eval-time safe-action compliance check that fails any trajectory that so
-much as touches the write tool.
+much as touches the write tool. Measured, not assumed: across the N=3
+re-measurement (15 case-runs), that check's write-path clause passed
+15/15 — zero unauthorized write attempts, zero successful.
 
 Approval itself is capability-based: a human decision mints an
 HMAC-SHA256-signed token scoped to one case, one field, one new value, with a
@@ -87,13 +91,17 @@ The honest list:
 
 - A safety invariant that holds by construction — enforced in tool
   registration, mechanically tripwired in the build, and independently
-  checked at eval time — not promised in a system prompt.
+  checked at eval time — not promised in a system prompt. Measured across
+  N=3 runs: 15/15 case-runs on the safe-action check's write-path clause,
+  zero unauthorized writes.
 - Finding and fixing our own evaluation leak before anyone else could, and
   publishing the contaminated-figure list rather than quietly moving on.
 - An evaluation doc that labels every claim (MEASURED / CALCULATED /
   OBSERVED / DOCUMENTED / PROJECTED / UNKNOWN) and names its own open
-  limitations: a known tool-parameter fabrication pattern and a
-  single-run (not-yet-a-rate) accuracy baseline.
+  limitations: a known tool-parameter fabrication pattern — with a first
+  remediation attempt (2026-09-09) measured and reported as showing no
+  improvement — and an accuracy baseline that now has N=3 runs (median 4/5
+  = 80.0% per run, range 3/5–5/5) but is still not an established rate.
 
 ## What we learned
 
@@ -118,8 +126,13 @@ invalidate your own headline numbers.
   `docs/architecture-diagram-2026-09-06.md` holds the Mermaid source and
   an element-to-code accuracy map), also embedded in the README.
 - The demo video (not recorded — shot-list draft below).
-- Repeated clean runs to turn single data points into rates; remediation of
-  the tool-parameter fabrication pattern.
+- More repeated clean runs: accuracy now has N=3 (median 4/5 = 80.0% per
+  run, range 3/5–5/5) — no longer a single data point, but still short of
+  an established rate.
+- The tool-parameter fabrication pattern remains open. A first remediation
+  attempt (the detector's exact-parameters restriction) was made and
+  measured on 2026-09-09 with no improvement; the next candidate levers
+  are named in [`docs/EVALUATION.md`](EVALUATION.md) §5.
 
 ## Built with
 
@@ -153,10 +166,11 @@ Every shot shows something that actually exists in the repository today.
 5. **A live investigation.** Run the 5-case benchmark command in a terminal
    (real Groq + Gemini calls); open a produced case file — evidence,
    root cause, drafted correction awaiting approval.
-6. **Honest results.** Screen: `docs/EVALUATION.md`. Narration: the clean
-   baseline is a single observed data point, not a rate; the eval-leak
-   discovery story; the named open limitation (fabricated tool parameters).
+6. **Honest results.** Screen: `docs/EVALUATION.md`. Narration: accuracy is
+   now N=3 runs (median 4/5 per run, range 3/5–5/5) — still short of an
+   established rate; the eval-leak discovery story; the named open limitation
+   (fabricated tool parameters — first remediation measured, no improvement).
 7. **Close — what's unfinished.** The remaining-work list on screen:
-   repeated clean runs, tool-parameter remediation, this video. End on the
-   thesis line: "The agent can investigate the money. It cannot touch the
-   money."
+   more repeated clean runs (N=3 today), the still-open tool-parameter
+   remediation, this video. End on the thesis line: "The agent can
+   investigate the money. It cannot touch the money."
