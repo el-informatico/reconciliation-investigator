@@ -1,6 +1,6 @@
 """Loopback single-case approval screen — `python -m approval.web` (§2.4).
 
-The §2.4 minimum viable interface as one web page, stdlib
+The §2.4 minimum viable interface as web pages, stdlib
 http.server only (no framework, no JavaScript — plain forms): the Case
 card and the Proposed-correction card are rendered from the LIVE
 runtime store; APPROVE/REJECT construct a GateDecision and hand it to
@@ -16,21 +16,33 @@ decision forms, because acting on a case stays on its own single-case
 screen (docs/build-contract.md §2.4).
 
 Demo boundary (stated, not silent): loopback only — 127.0.0.1 (the
-committed default) or ::1; this build refuses any other --bind — and
-no authentication, per §2.4's "auth ... out of scope for the demo"
-scoping. Both accepted literals are loopback-scope, so the boundary
-is unchanged; ::1 exists because this repo's WSL2 mirrored dev host
-drops IPv4-loopback TCP while ::1 stays healthy (measured
-2026-09-06, docs/approval-web-loopback-fix-and-validation-2026-09-06.md).
-Session state (token / executed / replay / action log) is in-memory
-and dies with the process.
+committed default) or ::1; this build refuses any other --bind. Both
+accepted literals are loopback-scope; ::1 exists because this repo's
+WSL2 mirrored dev host drops IPv4-loopback TCP while ::1 stays healthy
+(measured 2026-09-06, docs/approval-web-loopback-fix-and-validation-2026-09-06.md).
+Approver authentication (§2.4 AMENDED 2026-09-10, human-approved Tier C
+change): every request must present the per-session APPROVER ACCESS
+TOKEN — HTTP Basic, where the username becomes the audited approver
+identity and the password is the session token, compared constant-time.
+That token is a different thing from the gate's approval capability
+token and confers nothing by itself: APPROVE still constructs a
+GateDecision and asks the deterministic gate. Every POST must also
+carry the per-session CSRF nonce embedded in the served forms.
+main() generates both per session and never serves without them;
+build_server callers may pass auth_token/csrf_token=None explicitly
+for the embedded/test posture. Session state (token / executed /
+replay / action log / CSRF nonce) is in-memory and dies with the
+process.
 """
 
 from __future__ import annotations
 
 import argparse
+import base64
 import html
+import hmac
 import os
+import secrets
 import socket
 import sys
 import threading
@@ -102,7 +114,7 @@ PAGE_SHELL = """<!DOCTYPE html>
 <h1>Reconciliation Investigator — human approval</h1>
 <p class="muted">single-case approval screen (docs/build-contract.md §2.4 minimum viable interface)</p>
 __BODY__
-<footer>Security model: this page holds no authority. APPROVE constructs a GateDecision; the deterministic Python gate issues the scoped, expiring, single-use capability; the executor validates before any mutation. Loopback demo only — no authentication (docs/build-contract.md §2.4 scoping).</footer>
+<footer>Security model: this page holds no authority. APPROVE constructs a GateDecision; the deterministic Python gate issues the scoped, expiring, single-use capability; the executor validates before any mutation. Loopback demo only; approver authentication: per-session access token (HTTP Basic) plus CSRF nonces on every decision form (docs/build-contract.md §2.4, amended 2026-09-10).</footer>
 </body>
 </html>
 """
@@ -156,7 +168,18 @@ def _correction_card(case_id: str, draft: dict | None) -> str:
     return f'<section class="card"><h2>Proposed correction</h2><dl>{rows}</dl></section>'
 
 
-def _decision_card(draft: dict | None) -> str:
+def _csrf_field(state: dict) -> str:
+    """The hidden nonce input for a decision form. Empty when the server
+    was built without CSRF protection (auth_token/csrf_token=None — the
+    explicit embedded/test posture), so every POST form carries the
+    nonce exactly when the server will demand one."""
+    token = state.get("csrf")
+    if not token:
+        return ""
+    return f'<input type="hidden" name="csrf" value="{_esc(token)}">'
+
+
+def _decision_card(draft: dict | None, state: dict) -> str:
     disabled = "" if draft else " disabled"
     muted = (
         ""
@@ -169,10 +192,11 @@ def _decision_card(draft: dict | None) -> str:
         "capability and executes the drafted correction through the executor. REJECT "
         "closes the case ticket with your reason.</p>"
         f"{muted}"
-        f'<form method="post" action="/approve"><button type="submit"{disabled}>APPROVE</button></form>'
+        f'<form method="post" action="/approve">{_csrf_field(state)}'
+        f'<button type="submit"{disabled}>APPROVE</button></form>'
         f'<form method="post" action="/reject">'
         f'<input type="text" name="reason" placeholder="rejection reason (audited)"{disabled}> '
-        f'<button type="submit"{disabled}>REJECT</button></form>'
+        f'{_csrf_field(state)}<button type="submit"{disabled}>REJECT</button></form>'
         "</section>"
     )
 
@@ -198,6 +222,7 @@ def _execution_card(state: dict) -> str:
         '<section class="card"><h2>Execution result</h2>'
         f"<dl>{rows}</dl>"
         '<form method="post" action="/replay">'
+        f"{_csrf_field(state)}"
         "<button type=\"submit\">Attempt replay of the consumed capability</button></form>"
         "<p class=\"muted\">replay re-presents the SAME token and arguments to the "
         "executor; single-use means it must be refused</p>"
@@ -358,7 +383,7 @@ def render_page(case_id: str, state: dict, error: str | None = None) -> str:
         + (_error_card(error) if error else "")
         + _case_card(case_id, ticket)
         + _correction_card(case_id, draft)
-        + _decision_card(draft)
+        + _decision_card(draft, state)
         + _execution_card(state)
         + _replay_card(state)
         + _log_card(state)
@@ -366,11 +391,20 @@ def render_page(case_id: str, state: dict, error: str | None = None) -> str:
     return PAGE_SHELL.replace("__BODY__", body)
 
 
-def _make_handler(case_id: str, approver: str, state: dict, lock: threading.Lock) -> type:
+def _make_handler(
+    case_id: str,
+    approver: str,
+    state: dict,
+    lock: threading.Lock,
+    auth_token: str | None = None,
+    csrf_token: str | None = None,
+) -> type:
     """Build the request-handler class with the session captured in a
     closure (one handler instance per connection; the shared state is
     serialized by `lock` because ThreadingHTTPServer serves each request
-    on its own thread)."""
+    on its own thread). auth_token/csrf_token: None disables that gate —
+    the explicit embedded/test posture; main() always passes real
+    per-session tokens (fail-closed), never None."""
 
     class ApprovalHandler(BaseHTTPRequestHandler):
         def _send(self, status: int, body: bytes, content_type: str) -> None:
@@ -378,6 +412,61 @@ def _make_handler(case_id: str, approver: str, state: dict, lock: threading.Lock
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")  # the page is live state
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _credentials(self) -> tuple[str, str] | None:
+            """Parse the Basic header into (username, password); None when
+            absent or malformed. Never raises — an auth failure is a 401,
+            not a 500."""
+            header = self.headers.get("Authorization") or ""
+            if not header.startswith("Basic "):
+                return None
+            try:
+                decoded = base64.b64decode(
+                    header[len("Basic "):].strip(), validate=True
+                ).decode("utf-8")
+            except (ValueError, UnicodeDecodeError):
+                return None
+            user, _, password = decoded.partition(":")
+            return (user, password) if user else None
+
+        def _authorized(self) -> bool:
+            """The access gate, ahead of every request (GET and POST alike)
+            and of any gate/executor code: without a valid token nothing
+            renders and nothing runs. The username must be non-empty (it
+            becomes the audited approver identity) and the password must
+            equal the session's approver access token, compared
+            constant-time."""
+            if auth_token is None:
+                return True  # the explicit embedded/test posture
+            credentials = self._credentials()
+            if credentials is None:
+                return False
+            user, password = credentials
+            return bool(user.strip()) and hmac.compare_digest(
+                password.encode("utf-8"), auth_token.encode("utf-8")
+            )
+
+        def _approver_identity(self) -> str:
+            """Who the audit rows attribute: the authenticated username
+            when auth is on (guaranteed non-empty past _authorized); the
+            builder's `approver` argument otherwise."""
+            if auth_token is not None:
+                credentials = self._credentials()
+                if credentials is not None and credentials[0].strip():
+                    return credentials[0].strip()
+            return approver
+
+        def _send_unauthorized(self) -> None:
+            body = b"approver authentication required\n"
+            self.send_response(401)
+            self.send_header(
+                "WWW-Authenticate", 'Basic realm="approval", charset="UTF-8"'
+            )
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
             self.end_headers()
             self.wfile.write(body)
 
@@ -411,6 +500,9 @@ def _make_handler(case_id: str, approver: str, state: dict, lock: threading.Lock
 
         def do_GET(self) -> None:
             try:
+                if not self._authorized():
+                    self._send_unauthorized()
+                    return
                 with lock:
                     path = urllib.parse.urlsplit(self.path).path
                     if path == "/summary":
@@ -435,17 +527,42 @@ def _make_handler(case_id: str, approver: str, state: dict, lock: threading.Lock
 
         def do_POST(self) -> None:
             try:
+                if not self._authorized():
+                    self._send_unauthorized()
+                    return
+                form = self._form()  # parsed once; the CSRF check and the
+                # reject handler consume the same body — a second read
+                # would see an empty stream.
                 with lock:
                     path = urllib.parse.urlsplit(self.path).path
+                    if path not in ("/approve", "/reject", "/replay"):
+                        self._send(404, b"not found\n", "text/plain; charset=utf-8")
+                        return
+                    if csrf_token is not None and not hmac.compare_digest(
+                        form.get("csrf", "").encode("utf-8"),
+                        csrf_token.encode("utf-8"),
+                    ):
+                        # Stale form (server restarted, nonce rotated) or a
+                        # forged cross-origin POST: refused before any
+                        # handler runs, so the store is untouched.
+                        self._send(
+                            400,
+                            PAGE_SHELL.replace(
+                                "__BODY__",
+                                _error_card(
+                                    "form nonce missing or wrong (stale form or "
+                                    "forged request): nothing was changed"
+                                ),
+                            ).encode("utf-8"),
+                            "text/html; charset=utf-8",
+                        )
+                        return
                     if path == "/approve":
                         self._do_approve()
                     elif path == "/reject":
-                        self._do_reject(self._form())
-                    elif path == "/replay":
-                        self._do_replay()
+                        self._do_reject(form)
                     else:
-                        self._send(404, b"not found\n", "text/plain; charset=utf-8")
-                        return
+                        self._do_replay()
                     self._send_page()
             except Exception as exc:
                 try:
@@ -459,6 +576,7 @@ def _make_handler(case_id: str, approver: str, state: dict, lock: threading.Lock
             # this server's startup — only a real approval needs it.
             from orchestrator.graph import apply_gate_approval
 
+            approver = self._approver_identity()  # authenticated username when auth is on
             draft = latest_pending_draft(case_id)
             decision = GateDecision(GateAction.APPROVE, approver=approver)
             outcome = run_human_gate(self._case_file_text(), draft, decision, case_id=case_id)
@@ -481,6 +599,7 @@ def _make_handler(case_id: str, approver: str, state: dict, lock: threading.Lock
                 )
 
         def _do_reject(self, form: dict[str, str]) -> None:
+            approver = self._approver_identity()  # authenticated username when auth is on
             reason = (form.get("reason") or "").strip() or "rejected by human"
             decision = GateDecision(GateAction.REJECT, approver=approver, reason=reason)
             outcome = run_human_gate(
@@ -492,6 +611,7 @@ def _make_handler(case_id: str, approver: str, state: dict, lock: threading.Lock
             )
 
         def _do_replay(self) -> None:
+            approver = self._approver_identity()  # authenticated username when auth is on
             executed = state.get("executed") or {}
             token = state.get("token")
             if not token or not executed:
@@ -536,13 +656,31 @@ def _make_handler(case_id: str, approver: str, state: dict, lock: threading.Lock
 
 
 def build_server(
-    bind: str, port: int, case_id: str, approver: str, state: dict
+    bind: str,
+    port: int,
+    case_id: str,
+    approver: str,
+    state: dict,
+    auth_token: str | None = None,
+    csrf_token: str | None = None,
 ) -> ThreadingHTTPServer:
     """The single construction path for the screen's server — main() and
     the HTTP-layer tests share it, so no second wiring can arise. The
-    caller still owns serve_forever()/server_close()."""
+    caller still owns serve_forever()/server_close(). auth_token and/or
+    csrf_token None disables that gate (the explicit embedded/test
+    posture); main() always passes real per-session tokens. A csrf_token
+    is stashed into state["csrf"] so the served forms embed the same
+    nonce the POST path will demand."""
+    if csrf_token is not None:
+        state["csrf"] = csrf_token
     cls = _ThreadingHTTPServerV6 if ":" in bind else ThreadingHTTPServer
-    return cls((bind, port), _make_handler(case_id, approver, state, threading.Lock()))
+    return cls(
+        (bind, port),
+        _make_handler(
+            case_id, approver, state, threading.Lock(),
+            auth_token=auth_token, csrf_token=csrf_token,
+        ),
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -550,7 +688,8 @@ def build_parser() -> argparse.ArgumentParser:
         prog="python -m approval.web",
         description=(
             "Loopback single-case approval screen (docs/build-contract.md §2.4 minimum "
-            "viable interface; no authentication by stated demo scope)."
+            "viable interface, auth amended 2026-09-10: every request must present the "
+            "per-session approver access token)."
         ),
     )
     parser.add_argument(
@@ -559,6 +698,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="canonical case/customer id (e.g. C-1001; validated against the seed)",
     )
     parser.add_argument("--port", type=int, default=8765, help="port to listen on (default: 8765)")
+    parser.add_argument(
+        "--auth-token",
+        default=None,
+        help=(
+            "approver access token (the Basic-auth password; the username you type "
+            "becomes the audited approver identity). Default: a random token "
+            "generated for this session and printed once at startup — the screen "
+            "never serves without one"
+        ),
+    )
     parser.add_argument(
         "--approver",
         default="human",
@@ -587,8 +736,7 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"error: --bind must be one of {' / '.join(LOOPBACK_BINDS)} in this "
             f"demo build (got {args.bind!r}): loopback-only is a stated demo "
-            "boundary — the page carries no authentication "
-            "(docs/build-contract.md §2.4 scoping)",
+            "boundary (docs/build-contract.md §2.4)",
             file=sys.stderr,
         )
         return 2
@@ -605,12 +753,27 @@ def main(argv: list[str] | None = None) -> int:
         # the spine resolves through seed_data.runtime_path -> RUNTIME_DIR.
         seed_data.RUNTIME_DIR = args.runtime_dir
     state: dict = {"token": None, "executed": None, "replay": None, "action_log": []}
-    server = build_server(args.bind, args.port, case_id, args.approver, state)
+    # Fail-closed (§2.4 amendment, 2026-09-10): the screen never serves
+    # without a per-session approver access token and CSRF nonce. An
+    # operator-chosen --auth-token is not echoed back; a generated one is
+    # printed exactly once, to the terminal that launched the server (the
+    # operator is the trust anchor of this demo).
+    approver_access_token = args.auth_token or secrets.token_urlsafe(16)
+    server = build_server(
+        args.bind, args.port, case_id, args.approver, state,
+        auth_token=approver_access_token, csrf_token=secrets.token_urlsafe(16),
+    )
     shown_host = f"[{args.bind}]" if ":" in args.bind else args.bind
     print(
         f"approval screen for case {case_id}: http://{shown_host}:{args.port}/ (Ctrl+C to stop)",
         flush=True,
     )
+    if args.auth_token is None:
+        print(
+            "approver access token for this session (username = your name at the "
+            f"browser prompt): {approver_access_token}",
+            flush=True,
+        )
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -7,10 +7,13 @@ because this environment's shell cannot reach IPv4 loopback listeners
 (docs/approval-web-loopback-fix-and-validation-2026-09-06.md).
 """
 
+import base64
 import json
+import re
 import threading
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 import pytest
 
@@ -146,9 +149,18 @@ def test_summary_escapes_untrusted_ticket_text() -> None:
 # --- unreachable from this environment's shell — see module docstring) ---
 
 
-def _http_server(case_id: str = "C-1001", approver: str = "human"):
+def _http_server(
+    case_id: str = "C-1001",
+    approver: str = "human",
+    auth_token: str | None = None,
+    csrf_token: str | None = None,
+):
+    # auth_token/csrf_token None = the explicit embedded/test posture
+    # (build_server never defaults them on); main() always passes both.
     state = {"token": None, "executed": None, "replay": None, "action_log": []}
-    server = web.build_server("::1", 0, case_id, approver, state)
+    server = web.build_server(
+        "::1", 0, case_id, approver, state, auth_token=auth_token, csrf_token=csrf_token
+    )
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server, f"http://[::1]:{server.server_address[1]}/"
 
@@ -158,8 +170,26 @@ def _get(url: str):
         return response.status, response.read().decode()
 
 
-def _post(url: str):
-    request = urllib.request.Request(url, data=b"", method="POST")
+def _post(url: str, data: bytes = b""):
+    request = urllib.request.Request(url, data=data, method="POST")
+    with urllib.request.urlopen(request, timeout=5) as response:
+        return response.status, response.read().decode()
+
+
+def _basic_auth(username: str, token: str) -> str:
+    return "Basic " + base64.b64encode(f"{username}:{token}".encode()).decode()
+
+
+def _authorized_get(url: str, username: str, token: str):
+    request = urllib.request.Request(url, headers={"Authorization": _basic_auth(username, token)})
+    with urllib.request.urlopen(request, timeout=5) as response:
+        return response.status, response.read().decode()
+
+
+def _authorized_post(url: str, username: str, token: str, data: bytes = b""):
+    request = urllib.request.Request(
+        url, data=data, method="POST", headers={"Authorization": _basic_auth(username, token)}
+    )
     with urllib.request.urlopen(request, timeout=5) as response:
         return response.status, response.read().decode()
 
@@ -297,6 +327,193 @@ def test_bind_accepts_only_loopback_literals() -> None:
     assert web.build_parser().get_default("bind") == "127.0.0.1"
     for bad in ("0.0.0.0", "::", "localhost", "192.0.2.7"):
         assert web.main(["--customer", "C-1004", "--bind", bad]) == 2
+
+
+# --- approver authentication + CSRF (per-session access token) ---
+
+
+def test_auth_absent_credentials_get_401_with_basic_challenge() -> None:
+    server, url = _http_server(auth_token="sess-token-1234")
+    try:
+        with pytest.raises(urllib.error.HTTPError) as excinfo:
+            _get(url)
+        assert excinfo.value.code == 401
+        assert excinfo.value.headers.get("WWW-Authenticate", "").startswith("Basic")
+    finally:
+        _stop(server)
+
+
+def test_auth_wrong_same_length_token_get_401() -> None:
+    # same length as the real token: a byte-comparison shortcut would
+    # still fail here, a length shortcut would not — pins constant-time
+    # behavior at the HTTP layer (mechanism pinned separately below)
+    server, url = _http_server(auth_token="sess-token-1234")
+    try:
+        with pytest.raises(urllib.error.HTTPError) as excinfo:
+            _authorized_get(url, "alice", "sess-token-9999")
+        assert excinfo.value.code == 401
+    finally:
+        _stop(server)
+
+
+def test_auth_correct_token_gets_200_but_empty_username_is_rejected() -> None:
+    server, url = _http_server(auth_token="sess-token-1234")
+    try:
+        status, page = _authorized_get(url, "alice", "sess-token-1234")
+        assert status == 200 and "C-1001" in page
+        # the username becomes the audited approver identity: it may not
+        # be empty, or the audit row would attribute nobody
+        with pytest.raises(urllib.error.HTTPError) as excinfo:
+            _authorized_get(url, "", "sess-token-1234")
+        assert excinfo.value.code == 401
+    finally:
+        _stop(server)
+
+
+def test_auth_post_approve_unauthorized_leaves_store_untouched() -> None:
+    _draft_and_ticket()
+    server, url = _http_server(auth_token="sess-token-1234")
+    try:
+        with pytest.raises(urllib.error.HTTPError) as excinfo:
+            _post(url + "approve")
+        assert excinfo.value.code == 401
+        # CRITICAL: the 401 precedes any gate/executor code — the draft
+        # is still pending, no gate/execution audit rows exist, and no
+        # override was written.
+        assert _store_lines("drafts.jsonl")[-1]["status"] == "pending_approval"
+        audit_path = seed_data.RUNTIME_DIR / "audit_log.jsonl"
+        actions = (
+            [row.get("type") for row in _store_lines("audit_log.jsonl")]
+            if audit_path.exists()
+            else []
+        )
+        assert "gate_approval" not in actions and "correction_applied" not in actions
+        assert not (seed_data.RUNTIME_DIR / "overrides.json").exists()
+    finally:
+        _stop(server)
+
+
+def test_auth_approve_with_token_attributes_username_in_both_audit_rows() -> None:
+    _draft_and_ticket()
+    server, url = _http_server(auth_token="sess-token-1234")
+    try:
+        status, _page = _authorized_post(url + "approve", "audited-user", "sess-token-1234")
+        assert status == 200
+        # attribution follows the AUTHENTICATED identity, not a CLI flag
+        rows = _store_lines("audit_log.jsonl")
+        gate = [r for r in rows if r.get("type") == "gate_approval"]
+        applied = [r for r in rows if r.get("type") == "correction_applied"]
+        assert len(gate) == 1 and len(applied) == 1
+        assert gate[0]["approver"] == "audited-user"
+        assert applied[0]["approver"] == "audited-user"
+    finally:
+        _stop(server)
+
+
+def test_http_layer_summary_requires_auth_when_enabled() -> None:
+    server, url = _http_server(auth_token="sess-token-1234")
+    try:
+        with pytest.raises(urllib.error.HTTPError) as excinfo:
+            _get(url + "summary")
+        assert excinfo.value.code == 401  # case data sits behind the same gate
+    finally:
+        _stop(server)
+
+
+def test_build_server_auth_off_serves_without_challenge() -> None:
+    server, url = _http_server()  # auth_token=None: the explicit embedded/test posture
+    try:
+        with urllib.request.urlopen(url, timeout=5) as response:
+            assert response.status == 200
+            assert response.headers.get("WWW-Authenticate") is None
+    finally:
+        _stop(server)
+
+
+def test_auth_comparison_is_constant_time_by_construction() -> None:
+    # mechanism pin (coarse by design): the comparison goes through
+    # hmac.compare_digest — the behavioral proxies are the same-length
+    # wrong-token test above and the 401-store-untouched test
+    source = Path(web.__file__).read_text(encoding="utf-8")
+    assert "compare_digest" in source
+
+
+def test_csrf_missing_nonce_refused_without_side_effects() -> None:
+    _draft_and_ticket()
+    server, url = _http_server(csrf_token="nonce-abc123")
+    try:
+        with pytest.raises(urllib.error.HTTPError) as excinfo:
+            _post(url + "approve")  # no csrf field in the body
+        assert excinfo.value.code == 400
+        assert _store_lines("drafts.jsonl")[-1]["status"] == "pending_approval"
+        # the served form embeds the nonce; posting it back works end-to-end
+        _, page = _get(url)
+        nonce = re.search(r'name="csrf" value="([^"]+)"', page).group(1)
+        assert nonce == "nonce-abc123"
+        status, done = _post(url + "approve", data=f"csrf={nonce}".encode())
+        assert status == 200 and "Execution result" in done
+    finally:
+        _stop(server)
+
+
+def test_csrf_wrong_nonce_refused_without_side_effects() -> None:
+    _draft_and_ticket()
+    server, url = _http_server(csrf_token="nonce-abc123")
+    try:
+        with pytest.raises(urllib.error.HTTPError) as excinfo:
+            _post(url + "approve", data=b"csrf=nonce-xyz999")
+        assert excinfo.value.code == 400
+        assert _store_lines("drafts.jsonl")[-1]["status"] == "pending_approval"
+    finally:
+        _stop(server)
+
+
+def test_main_generates_per_session_tokens_by_default(monkeypatch, tmp_path, capsys) -> None:
+    recorded: dict = {}
+
+    class _FakeServer:
+        def serve_forever(self):
+            raise KeyboardInterrupt  # stop immediately after wiring
+
+        def server_close(self):
+            pass
+
+    def fake_build_server(bind, port, case_id, approver, state,
+                          auth_token=None, csrf_token=None):
+        recorded["auth_token"] = auth_token
+        recorded["csrf_token"] = csrf_token
+        return _FakeServer()
+
+    monkeypatch.setattr(web, "build_server", fake_build_server)
+    assert web.main(["--customer", "C-1001", "--runtime-dir", str(tmp_path)]) == 0
+    # fail-closed: main() never serves without per-session tokens
+    assert recorded["auth_token"] and recorded["csrf_token"]
+    # the generated token is shown exactly once to the launching operator
+    assert recorded["auth_token"] in capsys.readouterr().out
+
+
+def test_main_explicit_auth_token_is_used_and_not_echoed(monkeypatch, tmp_path, capsys) -> None:
+    recorded: dict = {}
+
+    class _FakeServer:
+        def serve_forever(self):
+            raise KeyboardInterrupt
+
+        def server_close(self):
+            pass
+
+    def fake_build_server(bind, port, case_id, approver, state,
+                          auth_token=None, csrf_token=None):
+        recorded["auth_token"] = auth_token
+        return _FakeServer()
+
+    monkeypatch.setattr(web, "build_server", fake_build_server)
+    assert web.main(
+        ["--customer", "C-1001", "--runtime-dir", str(tmp_path), "--auth-token", "op-chosen-token"]
+    ) == 0
+    assert recorded["auth_token"] == "op-chosen-token"
+    # the operator chose it; the server does not echo it back to stdout
+    assert "op-chosen-token" not in capsys.readouterr().out
 
 
 # --- CLI: startup validation and scripted-decision plumbing ---
