@@ -41,6 +41,7 @@ import argparse
 import base64
 import html
 import hmac
+import json
 import os
 import secrets
 import socket
@@ -107,6 +108,12 @@ PAGE_SHELL = """<!DOCTYPE html>
   table.summary th, table.summary td { border: 1px solid #cdd5df; padding: 0.3rem 0.55rem; text-align: left; font-size: 0.95em; }
   table.summary th { background: #e8ecf1; }
   ul { margin: 0.25rem 0; padding-left: 1.25rem; }
+  .val-old { color: #9c2b2b; font-weight: 600; }
+  .val-new { color: #1c6b3f; font-weight: 700; }
+  .diff-arrow { color: #5b6774; padding: 0 0.3rem; }
+  .val-delta { font-weight: 700; background: #e8ecf1; border-radius: 4px; padding: 0.05rem 0.4rem; }
+  pre { background: #e8ecf1; border-radius: 6px; padding: 0.6rem 0.75rem; white-space: pre-wrap; overflow-x: auto; font-size: 0.88em; margin: 0.4rem 0 0; }
+  details summary { cursor: pointer; color: #245f9e; }
   footer { color: #5b6774; font-size: 0.85rem; margin-top: 2rem; border-top: 1px solid #cdd5df; padding-top: 0.75rem; }
 </style>
 </head>
@@ -129,6 +136,36 @@ def _value(value: object) -> str:
     return _esc("n/a" if value is None else value)
 
 
+def _is_number(value: object) -> bool:
+    """Numeric-value test for the diff rendering. bool is excluded on
+    purpose: it is a subclass of int in Python but never a correction
+    value here, and rendering True as 1.00 would be noise, not a diff."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _value_diff(current: object, proposed: object) -> str:
+    """The decision object as the hero of the screen: current -> proposed
+    as a styled diff pair, with the computed delta emphasized when both
+    sides are numeric (`350.50 -> 305.50 (-45.00)`); enum-style values
+    (`ACTIVE -> SUSPENDED`) get the same visual treatment minus the
+    delta. Numeric display is fixed to two decimals — these fields are
+    money (balance) by contract; the delta always carries its sign."""
+    if _is_number(current) and _is_number(proposed):
+        old_txt, new_txt = f"{current:.2f}", f"{proposed:.2f}"
+        delta = proposed - current
+        return (
+            f'<span class="val-old">{_esc(old_txt)}</span>'
+            '<span class="diff-arrow">&rarr;</span>'
+            f'<span class="val-new">{_esc(new_txt)}</span>'
+            f' <span class="val-delta">({delta:+.2f})</span>'
+        )
+    return (
+        f'<span class="val-old">{_value(current)}</span>'
+        '<span class="diff-arrow">&rarr;</span>'
+        f'<span class="val-new">{_value(proposed)}</span>'
+    )
+
+
 def _case_card(case_id: str, ticket: dict | None) -> str:
     rows = [f"<dt>case id</dt><dd><code>{_esc(case_id)}</code></dd>"]
     if ticket is None:
@@ -139,8 +176,17 @@ def _case_card(case_id: str, ticket: dict | None) -> str:
     else:
         refs = ", ".join(str(ref) for ref in (ticket.get("evidence_refs") or [])) or "none cited"
         rows.append(
-            f"<dt>ticket</dt><dd><code>{_esc(ticket.get('ticket_id', ''))}</code>"
-            f" — {_value(ticket.get('summary', ''))}</dd>"
+            f"<dt>ticket</dt><dd><code>{_esc(ticket.get('ticket_id', ''))}</code></dd>"
+        )
+        # The verbatim agent output stays one click away, honestly labeled,
+        # collapsed by default so the raw markdown prose wall never
+        # dominates the screen. Presentation-only: nothing is summarized
+        # or reworded — the raw text is served escaped, byte for byte.
+        rows.append(
+            "<dt>case file</dt><dd>"
+            "<details><summary>Raw agent ticket (verbatim)</summary>"
+            f"<pre>{_esc(str(ticket.get('summary', '') or ''))}</pre>"
+            "</details></dd>"
         )
         rows.append(
             f"<dt>root cause</dt><dd><strong>{_value(ticket.get('root_cause', ''))}</strong>"
@@ -150,22 +196,116 @@ def _case_card(case_id: str, ticket: dict | None) -> str:
     return f'<section class="card"><h2>Case</h2><dl>{"".join(rows)}</dl></section>'
 
 
-def _correction_card(case_id: str, draft: dict | None) -> str:
-    if draft is None:
-        return (
-            '<section class="card"><h2>No pending correction draft</h2>'
-            "<p>No pending correction draft. Run the investigation first: "
-            f"<code>python -m approval.cli --customer {_esc(case_id)}</code></p></section>"
-        )
-    rows = (
-        f"<dt>field</dt><dd><code>{_esc(draft.get('field', ''))}</code></dd>"
-        f"<dt>value change</dt><dd>{_value(draft.get('current_value'))}"
-        f" -> {_value(draft.get('proposed_value'))}</dd>"
-        f"<dt>justification</dt><dd>{_value(draft.get('justification', ''))}</dd>"
-        f"<dt>draft id</dt><dd><code>{_esc(draft.get('draft_id', ''))}</code>"
-        f" — status {_esc(draft.get('status', ''))}</dd>"
+def _latest_draft(case_id: str) -> dict | None:
+    """The case's most recent draft in ANY status. The store's
+    pending-draft readers deliberately hide decided drafts; the executed /
+    receipt state needs them, so a decided case stops rendering exactly
+    like a never-investigated one."""
+    path = seed_data.runtime_path("drafts.jsonl")
+    if not path.exists():
+        return None
+    latest: dict | None = None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue  # a torn tail line is never a reason to crash the screen
+        if record.get("customer_id") == case_id:
+            latest = record
+    return latest
+
+
+def _decided_audit(draft: dict) -> dict | None:
+    """The audit entry the executor recorded for a decided draft —
+    approver and timestamp live there (the draft row itself carries only
+    audit_entry_id / approved_at)."""
+    audit_id = str(draft.get("audit_entry_id", "") or "")
+    if not audit_id:
+        return None
+    path = seed_data.runtime_path("audit_log.jsonl")
+    if not path.exists():
+        return None
+    for line in reversed(path.read_text(encoding="utf-8").splitlines()):
+        if not line.strip():
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if record.get("audit_entry_id") == audit_id:
+            return record
+    return None
+
+
+def _decided_card(draft: dict) -> str:
+    """The post-decision state, distinct from never-ran: an execution
+    receipt when the store says applied/consumed (status, the executed
+    value change, single-use capability consumed, approver + timestamp,
+    audit entry); rejected / correction_failed get the same card with
+    their own status shown. The 'run the investigator' hint is reserved
+    for a case with no draft at all — it was wrong for these states."""
+    status = str(draft.get("status", ""))
+    audit = _decided_audit(draft) if status in ("applied", "correction_failed") else None
+    status_html = (
+        f'<span class="ok">{_esc(status)}</span>'
+        if status == "applied"
+        else f'<span class="bad">{_esc(status)}</span>'
     )
-    return f'<section class="card"><h2>Proposed correction</h2><dl>{rows}</dl></section>'
+    rows = f"<dt>status</dt><dd>{status_html}</dd>"
+    rows += (
+        "<dt>value change</dt><dd>"
+        f"{_value_diff(draft.get('current_value'), draft.get('proposed_value'))}</dd>"
+    )
+    if status == "applied":
+        rows += (
+            "<dt>capability</dt><dd>single-use approval capability — "
+            "consumed at execute (the executor refuses any replay)</dd>"
+        )
+    if draft.get("failure_reason"):
+        rows += (
+            f'<dt>failure reason</dt><dd class="bad">{_esc(draft["failure_reason"])}</dd>'
+        )
+    if audit is not None:
+        rows += (
+            f"<dt>approver</dt><dd>{_esc(audit.get('approver', '') or 'n/a')}</dd>"
+            f"<dt>executed at</dt><dd>{_esc(audit.get('at', '') or 'n/a')}</dd>"
+        )
+    elif draft.get("approved_at"):
+        rows += f"<dt>approved at</dt><dd>{_esc(draft['approved_at'])}</dd>"
+    rows += (
+        "<dt>audit entry</dt><dd><code>"
+        f"{_esc(str(draft.get('audit_entry_id', '') or 'n/a'))}</code></dd>"
+        f"<dt>draft id</dt><dd><code>{_esc(draft.get('draft_id', ''))}</code></dd>"
+    )
+    return (
+        '<section class="card"><h2>Execution receipt</h2>'
+        f"<dl>{rows}</dl>"
+        '<p class="muted">read live from the runtime store — this state survives '
+        "server restarts; nothing further is pending on this case</p></section>"
+    )
+
+
+def _correction_card(case_id: str, draft: dict | None) -> str:
+    if draft is not None:
+        rows = (
+            f"<dt>field</dt><dd><code>{_esc(draft.get('field', ''))}</code></dd>"
+            "<dt>value change</dt><dd>"
+            f"{_value_diff(draft.get('current_value'), draft.get('proposed_value'))}</dd>"
+            f"<dt>justification</dt><dd>{_value(draft.get('justification', ''))}</dd>"
+            f"<dt>draft id</dt><dd><code>{_esc(draft.get('draft_id', ''))}</code>"
+            f" — status {_esc(draft.get('status', ''))}</dd>"
+        )
+        return f'<section class="card"><h2>Proposed correction</h2><dl>{rows}</dl></section>'
+    decided = _latest_draft(case_id)
+    if decided is not None:
+        return _decided_card(decided)
+    return (
+        '<section class="card"><h2>No pending correction draft</h2>'
+        "<p>No pending correction draft. Run the investigation first: "
+        f"<code>python -m approval.cli --customer {_esc(case_id)}</code></p></section>"
+    )
 
 
 def _csrf_field(state: dict) -> str:

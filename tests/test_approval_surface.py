@@ -86,6 +86,75 @@ def test_web_execution_and_replay_cards_render_from_session_state() -> None:
     assert "already consumed" in page
 
 
+# --- presentation pass (2026-09-12): money-diff pair, collapsed verbatim
+# --- ticket, store-derived executed/receipt state -------------------------
+
+_EMPTY_STATE = {"token": None, "executed": None, "replay": None, "action_log": []}
+
+
+def test_value_diff_numeric_pair_renders_styled_delta() -> None:
+    _draft_and_ticket()  # C-1001 balance 1250.00 -> 1500.00
+    page = web.render_page("C-1001", _EMPTY_STATE)
+    assert '<span class="val-old">1250.00</span>' in page
+    assert '<span class="val-new">1500.00</span>' in page
+    assert '<span class="val-delta">(+250.00)</span>' in page
+    # the old flat rendering is gone
+    assert "1250.0 -> 1500.0" not in page
+
+
+def test_value_diff_enum_pair_renders_without_delta() -> None:
+    draft_correction("C-1004", "status", "ACTIVE", "SUSPENDED", "status evidence")
+    page = web.render_page("C-1004", _EMPTY_STATE)
+    assert '<span class="val-old">ACTIVE</span>' in page
+    assert '<span class="val-new">SUSPENDED</span>' in page
+    # no delta for a non-numeric pair ("val-delta" still names a CSS rule,
+    # so assert the SPAN, not the bare class string)
+    assert '<span class="val-delta">' not in page
+
+
+def test_case_card_collapses_raw_ticket_verbatim() -> None:
+    _draft_and_ticket()
+    page = web.render_page("C-1001", _EMPTY_STATE)
+    assert "<details><summary>Raw agent ticket (verbatim)</summary>" in page
+    # the raw text is still served, byte for byte, inside the collapsed block
+    assert "summary of the case" in page
+    # the old inline rendering (ticket id joined to the prose) is gone
+    assert " — summary of the case</dd>" not in page
+
+
+def test_receipt_state_when_store_says_applied() -> None:
+    from orchestrator.graph import apply_gate_approval
+    from orchestrator.human_gate import (
+        GateAction,
+        GateDecision,
+        latest_pending_draft,
+        run_human_gate,
+    )
+
+    _draft_and_ticket()
+    outcome = run_human_gate(
+        "case file", latest_pending_draft("C-1001"),
+        GateDecision(GateAction.APPROVE, approver="tester"), case_id="C-1001",
+    )
+    executed = apply_gate_approval("C-1001", outcome, outcome["draft"], approver="tester")
+    assert executed["status"] == "applied"
+
+    # a FRESH session (new server process) must still see the receipt:
+    # the state below carries nothing; the card is store-derived.
+    page = web.render_page("C-1001", _EMPTY_STATE)
+    assert "Execution receipt" in page
+    assert '<span class="ok">applied</span>' in page
+    assert "consumed at execute" in page
+    assert executed["audit_entry_id"] in page
+    assert "tester" in page  # approver, from the executor's audit entry
+    # the never-ran hint is gated to the genuinely-no-draft state only
+    assert "No pending correction draft" not in page
+    assert "approval.cli --customer C-1001" not in page
+    # the executed diff pair is the hero of the receipt too
+    assert '<span class="val-old">1250.00</span>' in page
+    assert '<span class="val-delta">(+250.00)</span>' in page
+
+
 # --- read-only multi-case summary (/summary) ---
 
 
