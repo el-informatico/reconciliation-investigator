@@ -1,12 +1,12 @@
 # Evaluation & results — the honest summary
 > AMENDED 2026-09-07: this report references the agent-memory/ directory, which was removed from repository history by the 2026-09-07 excision rewrite; those artifacts are retained only in the author's private local archive, never in this repository.
 
-**As of 2026-09-10.** This document summarizes what has and has not been
+**As of 2026-09-13.** This document summarizes what has and has not been
 measured for Reconciliation Investigator. Every figure below is quoted from
 a cited source report and carries a classification tag, with one standing
 exception introduced by the 2026-09-06 correction pass: §9's offline-suite
 count is re-executed directly whenever the suite changes (most recently
-2026-09-10). Results exist and are cited; gaps are named as gaps.
+2026-09-13). Results exist and are cited; gaps are named as gaps.
 (DOCUMENTED throughout — the cited source is the authority.)
 
 ## 0. How to read this document
@@ -372,8 +372,8 @@ retry/OTel/infrastructure-token figures.
 
 ## 9. Offline test suite
 
-Most recent count on record: **287 passed** (offline suite re-executed
-2026-09-10, `uv run --locked pytest -q`).
+Most recent count on record: **291 passed** (offline suite re-executed
+2026-09-13, `uv run --locked pytest -q`).
 Lineage: 132 → 150 with the leak fix's 18 new tests
 (`docs/eval-ground-truth-leak-fix-2026-09-05.md` §5) → 155 (clean-run
 task, `docs/clean-5case-validation-2026-09-05.md` §1d) → 190 (human-gate
@@ -408,7 +408,10 @@ authenticated attribution in both audit rows, `/summary` behind auth,
 embedded no-challenge posture, compare_digest mechanism pin,
 missing/wrong CSRF nonce 400s, fail-closed `main()` token default,
 explicit `--auth-token` not echoed) (287 MEASURED 2026-09-10; lineage
-DOCUMENTED per the cited docs)
+DOCUMENTED per the cited docs) → 291 (+4 approval-web presentation
+tests — numeric diff pair, enum diff pair, details-collapse,
+store-derived execution receipt — commit 4237a27, 2026-09-12; 291
+MEASURED on re-run 2026-09-13)
 
 ## 10. Source map
 
