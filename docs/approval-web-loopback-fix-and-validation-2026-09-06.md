@@ -105,7 +105,7 @@ local-only exposure (CALCULATED; interfaces MEASURED via `ip addr`).
 
 ## 3. The fix (Phase 2a) — MEASURED + DOCUMENTED
 
-`approval/web.py` only (diff: +58/−21 lines against f836966; the
+`approval/web.py` only (diff: +58/−21 lines against 8552390; the
 APPROVE/REJECT/REPLAY handlers, routes, token/session state, and
 EVAL_MODE handling are byte-untouched — C1):
 

@@ -106,13 +106,13 @@ N=3 re-measurement in §3.1 below.
 
 Three further clean runs of the same driver on 2026-09-09 (12:41–13:19
 UTC), the first measurements taken after the detector prompt gained the
-exact-parameters restriction (commit `1b63853`; `docs/build-contract.md`
+exact-parameters restriction (commit `09a0e56`; `docs/build-contract.md`
 §2.1 updated byte-identically in the same change — tool args must be
 sourced, never invented). Everything else identical: same five cases,
 Groq/Gemini split, 4.3 s pacer, retry strategy, judges, harness. Evidence
 tree (local archive, gitignored):
 `agent-memory/evidence/remeasure-5case-2026-09-09/` — `preflight.txt`
-(pins git HEAD `1b63853`, clean tree), `run-1/`–`run-3/` (each with
+(pins git HEAD `09a0e56`, clean tree), `run-1/`–`run-3/` (each with
 per-case `eval-rows.json`, `token-usage.jsonl`, `retry-evidence.json`,
 run-root `index.json`), `remeasure-digest.json`, and
 `make-remeasure-digest.py` (the derivation script). (MEASURED)
@@ -219,7 +219,7 @@ reverification §2b aggregates over the MEASURED census)
   fabrication rate — UNKNOWN** (single clean run; heterogeneous denominators
   across runs). (UNKNOWN, per index standing-unknowns)
 - Remediation attempt measured 2026-09-09 (§3.1): the detector-side
-  exact-parameters restriction (commit `1b63853`, this repository's
+  exact-parameters restriction (commit `09a0e56`, this repository's
   `agents/detector_investigator.py` + build-contract §2.1) did **not**
   measurably reduce fabrication-failure rows — 13/40 judgeable fails
   across N=3 vs the clean baseline's 9/30, with 9 Gemini-503 judge-error

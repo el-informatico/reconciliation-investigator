@@ -1,7 +1,7 @@
 # System Reference — reconciliation-investigator
 
 **An engineering reference for maintainers and future agent sessions.**
-State as of **2026-09-06**, git HEAD **`cac9a80`** on `main` (in sync with
+State as of **2026-09-06**, git HEAD **`f4b2ff8`** on `main` (in sync with
 `origin/main`). Offline suite at this HEAD: **218 passed** (MEASURED during
 this document's compilation, `uv run --locked pytest -q`, 8.22 s, zero
 git-status delta — see §8).
@@ -19,7 +19,7 @@ reports under `docs/` (primary evidence; indexed in §6).
 
 ### 0.1 Verification basis
 
-Compiled 2026-09-06 by direct code inspection at `cac9a80`: four parallel
+Compiled 2026-09-06 by direct code inspection at `f4b2ff8`: four parallel
 read-only investigation passes (agent-side architecture; documentation corpus;
 tests and verification; control-path security), followed by per-citation
 re-verification of every load-bearing claim against the source files
@@ -34,7 +34,7 @@ note — so this document pins one):
 
 - **MEASURED** — a command was executed and its output recorded during this
   document's compilation (e.g. the offline suite run, greps, `git` reads).
-- **OBSERVED** — directly seen in repository files/source at HEAD `cac9a80`
+- **OBSERVED** — directly seen in repository files/source at HEAD `f4b2ff8`
   during this document's inspection.
 - **DOCUMENTED** — stated in a cited project report; relayed, not re-derived
   here beyond what the citation shows.
@@ -306,7 +306,7 @@ downgraded; a replay of a consumed token after success fails loudly while the
 `resolved`/`applied` states survive. Returns `{"status": "failed",
 "error": …}` (:71).
 
-**Approver attribution** (the P0-C fix, commit `a7536c9`): `approver` is a
+**Approver attribution** (the P0-C fix, commit `44faf7c`): `approver` is a
 declarative parameter (not an authorization check); both the `gate_approval`
 and `correction_applied` rows carry it. The web surface previously omitted
 the kwarg so a custom `--approver` reached `gate_approval` but
@@ -699,7 +699,7 @@ asserted by sha256 before/after in four tests
 
 Each row: the invariant as claimed (claim source), the enforcing code, and
 the test(s) that pin it. "Status" reflects this task's verification at HEAD
-`cac9a80`. GAP rows follow the table.
+`f4b2ff8`. GAP rows follow the table.
 
 | # | Invariant (claim source) | Enforcement (code) | Verification (tests / scripts) | Status |
 |---|---|---|---|---|
@@ -803,7 +803,7 @@ completeness, so a reader knows they need not be re-raised.
 3. **Attempt-1 (C-1004) draft-rejection, cause UNKNOWN — permanently**: the
    failure pre-dates the diagnostics log, so no record of the rejected call
    shape exists. Mitigation landed (rejected_calls.jsonl + viewer, commit
-   `d3d8ebc`); **first live entry still pending** — no live run has occurred
+   `b2d153c`); **first live entry still pending** — no live run has occurred
    since. PARTIALLY MITIGATED (diagnosable going forward, uncharacterized as
    yet). (DOCUMENTED, `docs/draft-rejection-diagnostics-2026-09-06.md` §10;
    p0c §7.)
@@ -899,10 +899,10 @@ completeness, so a reader knows they need not be re-raised.
 ### 5.6 Resolved (do not re-raise)
 
 - EVALUATION §8.1/§8.2 staleness ("approval surface NOT built", "diagram NOT
-  created") — corrected by commits `6dac326` and `cac9a80`; suite-count
+  created") — corrected by commits `c8fd329` and `f4b2ff8`; suite-count
   lineage updated to 218 (EVALUATION §9). RESOLVED.
 - DEVPOST-DRAFT "UI is not built" staleness — corrected by the concurrent
-  Devpost task, commit `cac9a80`. RESOLVED.
+  Devpost task, commit `f4b2ff8`. RESOLVED.
 - Groq-free-tier trajectory-judge TPM blockage and the token-workload split
   question — RESOLVED by adoption of the Groq-agents + Gemini-judges split
   in all reported runs (`docs/token-workload-canary-2026-09-04.md`
@@ -986,7 +986,7 @@ rc=0; 2/2/2/0 retry events — its **retry** figures remain citable; its
 | `docs/human-gate-e2e-validation-2026-09-05.md` | The P0 human-gate build: canonical identity (the 44-spelling measurement), draft hygiene, `approval/` surfaces, Attempt-1 failure (kept, cause UNKNOWN) + Attempt-2 full success; §9 invariants table; §10 limitations. Carries three 2026-09-06 amendment blocks (`--bind ::1`; loopback gap superseded by the WSL2 root cause; Windows headless validation done, headed click outstanding). Known inaccuracies: `modern_status_values()` name (:30), §6 surface-wording (§7-items-5/6). |
 | `docs/draft-rejection-diagnostics-2026-09-06.md` | The rejected-calls log: schema, proof-of-inertness (spy + tripwire), viewer; suite 190→216; §10 residuals. |
 | `docs/approval-web-loopback-fix-and-validation-2026-09-06.md` | WSL2 v4-loopback blackhole diagnosis (probe matrix); `LOOPBACK_BINDS` fix; live Chromium 19/19 over `[::1]`; §4/§7 amendment blocks; §10 Windows default-bind validation addendum. |
-| `docs/p0c-closeout-2026-09-06.md` | Approver-attribution fix, Windows-side default-bind validation, README split; suite 217. **Note**: its §4 "nothing pushed / origin untouched at ac1ba3a" was true at writing and is stale now (origin/main = `cac9a80`, pushed) — read §4 as session-scoped (§7-item-7). |
+| `docs/p0c-closeout-2026-09-06.md` | Approver-attribution fix, Windows-side default-bind validation, README split; suite 217. **Note**: its §4 "nothing pushed / origin untouched at e6770b5" was true at writing and is stale now (origin/main = `f4b2ff8`, pushed) — read §4 as session-scoped (§7-item-7). |
 | `docs/local-path-ai-reference-audit-and-commit-2026-09-06.md` | Repo-wide local-path/AI-reference audit; the no-AI-attribution rule made mechanical (commit-msg hook); 13-commit landing. |
 
 ### 6.6 Provider, credential, and token-workload chain
@@ -1015,7 +1015,7 @@ passed) → `docs/git-stage2-sha-rewrite-report-2026-09-05.md` (19-entry SHA
 map) → `docs/git-stage2-final-report-2026-09-05.md` (identity rewrite,
 Apache-2.0 LICENSE, private repo created) →
 `docs/git-stage3-pending-work-audit-2026-09-05.md` →
-`docs/git-stage3-final-report-2026-09-05.md` (commit #20 `ac1ba3a` pushed).
+`docs/git-stage3-final-report-2026-09-05.md` (commit #20 `e6770b5` pushed).
 Also `docs/state-and-gap-analysis-2026-09-05.md` (the pre-push
 submission-readiness audit at then-HEAD `316835f`).
 
@@ -1073,8 +1073,8 @@ document's terms of reference, they are reported here, not fixed).
    annotate-don't-erase fixes consistent with repo practice.
 4. **Add a push-state amendment note to `docs/p0c-closeout-2026-09-06.md`
    §4** (§4-GAP list / verified this task): its "nothing pushed; origin/main
-   untouched at `ac1ba3a`. MEASURED." is session-true but now stale
-   (origin/main = `cac9a80`). One dated amendment line prevents a cold reader
+   untouched at `e6770b5`. MEASURED." is session-true but now stale
+   (origin/main = `f4b2ff8`). One dated amendment line prevents a cold reader
    from concluding the closeout was never pushed.
 5. **The actual submission blockers are process items, already tracked**:
    repo visibility decision (§5.16) and the demo video (§5.17). Neither is a
@@ -1144,7 +1144,7 @@ document's terms of reference, they are reported here, not fixed).
 ```bash
 cd "$(git rev-parse --show-toplevel)"
 
-# The offline suite (verify.sh step 5 exactly). Expected at HEAD cac9a80:
+# The offline suite (verify.sh step 5 exactly). Expected at HEAD f4b2ff8:
 # 218 passed. MEASURED during compilation: 8.22 s, zero git-status delta.
 uv run --locked pytest -q
 
@@ -1172,7 +1172,7 @@ CLAUDE.md (verify.sh header).
 
 | Claim class in this document | How to re-verify | Feasible offline? |
 |---|---|---|
-| Code structure, signatures, constants, validation chains (§2) | Read the cited `file:line` at HEAD `cac9a80`; citations drift one line per intervening edit | Yes |
+| Code structure, signatures, constants, validation chains (§2) | Read the cited `file:line` at HEAD `f4b2ff8`; citations drift one line per intervening edit | Yes |
 | Test matrix (§4 column 4, §8.1) | Read the cited test; run the suite | Yes |
 | Store schemas and lifecycles (§3) | Read the writer code cited; inspect `runtime/` | Yes |
 | Invariant GAPs (§4) | Reproduce the cited code paths (e.g. GAP-5: read human_gate.py:115 with no enclosing try) | Yes |
@@ -1183,7 +1183,7 @@ CLAUDE.md (verify.sh header).
 
 ### 8.3 Freshness
 
-This document's citations are exact at `cac9a80`. After any commit, treat
+This document's citations are exact at `f4b2ff8`. After any commit, treat
 line numbers as ± the diff; re-run §8.1 before trusting the suite-count and
 guard claims. Sections 4-§7 reflect the *state of enforcement and evidence*
 as of the compilation date and are the parts most likely to age; §2-§3 age

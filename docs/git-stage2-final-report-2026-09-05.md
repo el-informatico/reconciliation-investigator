@@ -31,7 +31,7 @@ locally and on the remote (unique identity line at `origin/main`). The
 
 Identical shape: linear, single root, single branch `main`, no tags.
 Root: `daedc780…` → `7144e90ce6a7e00581cf7f09d85e73a58c739bb5`.
-Tip: `316835fb…` → `160abd856734e33623eb97f226c422f0595a1a2f`.
+Tip: `316835fb…` → `a6726d2d317ce166e7c884a7ff06b0ea450d0423`.
 Author AND committer dates preserved on all 19 (chronology monotonic).
 
 ## 5. Old → new SHA map (19 entries)
@@ -41,8 +41,8 @@ machine-readable: `agent-memory/evidence/git-stage2-rewrite-2026-09-05/sha-map.t
 Compact: daedc78→7144e90 · 88303b7→f067bcd [CORRECTED 2026-09-07 — commit pruned by the agent-memory excision rewrite; see the operative execution plan's §2.4 commit map] · abac42a→811df14 · df44a8c→2fbfab9
 · ceed30c→b153154 · 8bc8331→68d505f · c1e0b0b→dc9f797 · b5e5df0→402e2cf ·
 3e194f1→ddf1f42 · 68aebd3→714a282 · 2ef1a51→cf58ddf · 6b8e29f→f00d624 ·
-c2803a5→af90ddc · 48a4586→749d456 · 546e88b→5c44ab0 · 958a815→f1caf38 ·
-5d3677c→1adb7fa · 8c13fc2→7b10931 · 316835f→160abd8.
+c2803a5→af90ddc · 48a4586→749d456 · 546e88b→5c44ab0 · 958a815→76fd468 ·
+5d3677c→2077e31 · 8c13fc2→5b1b632 · 316835f→a6726d2.
 
 ## 6. Commit-message rewrite summary
 
@@ -71,7 +71,7 @@ process.
 ## 8. SHA-reference repair results
 
 Category A (remapped, 3): decisions.md:58→`811df14`, :68→`2fbfab9`,
-provider-feasibility-cerebras-gemini.md:455→`f1caf38`. Category B
+provider-feasibility-cerebras-gemini.md:455→`76fd468`. Category B
 (preserved provenance, 185 in the 19-file universe + 91 in Stage-2 session
 files): all agent-memory evidence and dated audit docs, incl. the
 impl-diff/decisions.md/todo triple under ONE consistent treatment
@@ -141,7 +141,7 @@ creation. **The repository remains PRIVATE.**
 
 `git push -u origin main` (SSH, `noreply@example.com:el-informatico/…`) — new
 branch, clean first attempt. Remote refs: exactly `refs/heads/main` (and
-HEAD) at `160abd856734e33623eb97f226c422f0595a1a2f`; **zero tags; the local
+HEAD) at `a6726d2d317ce166e7c884a7ff06b0ea450d0423`; **zero tags; the local
 recovery ref `stage2-pre-rewrite-backup` was NOT pushed**; sole branch
 `main`; remote count 19 / merges 0; remote identity and trailer checks pass;
 remote LICENSE and README verified via the API. `origin/main == main`.

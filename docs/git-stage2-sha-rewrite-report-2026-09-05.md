@@ -26,15 +26,15 @@ Classification tags: MEASURED / OBSERVED / DOCUMENTED / CALCULATED / PROJECTED /
 | 13 | c2803a550fb686108e5bc83f4a74b727520fdc59 | af90ddc72f865269d5c83c49ac8be81df115b9e1 | c2803a5 | af90ddc |
 | 14 | 48a45863d976091dc95f39f2c78eb6b66c9c09de | 749d4566802c71fb1904bc554aa6357be9b61c39 | 48a4586 | 749d456 |
 | 15 | 546e88b64c9e587507f257b0a835bee6bee67c7b | 5c44ab0e1d561d9f279098be96ec2396b8c7cc05 | 546e88b | 5c44ab0 |
-| 16 | 958a815480f01d33ef5481438eb35f73dec241c8 | f1caf38f63d7988b43ab1c17039918412ee36ef5 | 958a815 | f1caf38 |
-| 17 | 5d3677c6e7c21072fce752e56e458cfb6a673b9d | 1adb7fa285aa6fe71bf3196b58160d9248408791 | 5d3677c | 1adb7fa |
-| 18 | 8c13fc2f452b67c097802886a6955b4d86bbccf0 | 7b1093109a71cdf0ceb164229122f461f4bf3d5f | 8c13fc2 | 7b10931 |
-| 19 | 316835fb73d66850444473c86fa33df10c4c8169 | 160abd856734e33623eb97f226c422f0595a1a2f | 316835f | 160abd8 |
+| 16 | 958a815480f01d33ef5481438eb35f73dec241c8 | 76fd468f70bef3a2155c881ebbd1659f01d5f1c5 | 958a815 | 76fd468 |
+| 17 | 5d3677c6e7c21072fce752e56e458cfb6a673b9d | 2077e31c9df7307706645e41072181a269ab5ced | 5d3677c | 2077e31 |
+| 18 | 8c13fc2f452b67c097802886a6955b4d86bbccf0 | 5b1b632df5e48feda1ac35bc5c85725a6149e165 | 8c13fc2 | 5b1b632 |
+| 19 | 316835fb73d66850444473c86fa33df10c4c8169 | a6726d2d317ce166e7c884a7ff06b0ea450d0423 | 316835f | a6726d2 |
 
 Machine-readable copy: `agent-memory/evidence/git-stage2-rewrite-2026-09-05/sha-map.tsv`
 (also: pre-rewrite metadata + verbatim messages + post-sync porcelain, same
 directory). The live run reproduced the rehearsed dry-run chain
-**bit-identically** (deterministic build; expected tip `160abd8…` matched).
+**bit-identically** (deterministic build; expected tip `a6726d2…` matched).
 (MEASURED)
 
 ## 2. What changed and what did not (MEASURED, 21/21 mechanical PASS)
@@ -52,7 +52,7 @@ directory). The live run reproduced the rehearsed dry-run chain
   as 22 files (task-contract-001:27, bootstrap-sanity:59) and the placed
   README sha256 `0b7f3bc5…` (decisions.md:73) remain TRUE at their referenced
   commits. Inter-commit patch-ids identical for ALL pairs 1→2 through 17→18.
-- Rank 19 (`160abd8`) is the single fold commit: +`LICENSE` (canonical Apache
+- Rank 19 (`a6726d2`) is the single fold commit: +`LICENSE` (canonical Apache
   2.0, sha256 `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30`),
   README.md one line (`[MIT](LICENSE)` → the Apache/copyright line, mode
   preserved), and the three SHA remaps below. Full `git fsck` clean.
@@ -68,7 +68,7 @@ directory). The live run reproduced the rehearsed dry-run chain
   doc's post-inventory §8 addendum; tracked = 25 not 40).
 - **Category A — remapped (3)**: `decisions.md:58` abac42a→`811df14`,
   `decisions.md:68` df44a8c→`2fbfab9`, `provider-feasibility-cerebras-gemini.md:455`
-  958a815→`f1caf38`. Verified present exactly once each; the three old shorts
+  958a815→`76fd468`. Verified present exactly once each; the three old shorts
   are absent from both files. (MEASURED)
 - **Category B — intentionally preserved provenance (185 in the 19-file
   universe; 91 more in Stage-2-session files, all B; working-tree grand
@@ -78,7 +78,7 @@ directory). The live run reproduced the rehearsed dry-run chain
   c1e0b0b) and all untracked dated docs/evidence incl. the Stage-1/Stage-2
   audit documents. The impl-diff/decisions.md/todo triple keeps ONE
   consistent treatment (preserve — remapping captured transcripts would
-  falsify them). Pushed-tree census (`git grep` at `160abd8`): old SHAs exist
+  falsify them). Pushed-tree census (`git grep` at `a6726d2`): old SHAs exist
   ONLY in the six intended tracked files, 22 occurrences total, zero
   elsewhere. (MEASURED)
 - **Categories C/D — zero collisions**: no non-commit hash (blob, sha256,
@@ -111,7 +111,7 @@ backup-tip tree and the new-tip tree.
 - Working tree (with the uncommitted retry/fix work, which remains local and
   unpushed by decision D3): **132 passed** post-rewrite (5.38 s); segregation
   guard exit 0.
-- Pushed tree (`160abd8`'s committed tests = the `316835f`-era suite):
+- Pushed tree (`a6726d2`'s committed tests = the `316835f`-era suite):
   **72 passed** (rehearsal clone; collection without `.env` fails
   environmentally — `evals/run_evals.py` builds the model at import — and a
   dummy-key offline run yields 72/72, matching the era's documented "72/72").

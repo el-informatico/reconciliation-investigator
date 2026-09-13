@@ -11,7 +11,7 @@ one item was split with one half recommended against, and one long-term
 item was **promoted** to pre-submission (7.b.6, on public-flip exposure
 evidence §7 did not have).
 
-**Basis**: git HEAD `cac9a80` (= `origin/main`, MEASURED `git rev-parse`,
+**Basis**: git HEAD `f4b2ff8` (= `origin/main`, MEASURED `git rev-parse`,
 in sync), working tree clean of modifications to tracked files at the
 verification snapshot (19:29:55 UTC 2026-09-06, MEASURED). The offline
 suite was **not** executed by this task; "218 passed" is relayed as
@@ -35,18 +35,18 @@ edits have since landed **uncommitted** in the working tree — all five
 findings visibly addressed (the README NOTE/judges/runtime-tree
 rewrites, a bracketed correction at e2e `:30`, dated CORRECTED blocks
 at p0c §4, and the diagram mermaid/SVG/PNG re-synced to match), while
-the e2e §6 wording (T8) is not touched. HEAD remains `cac9a80`. The
+the e2e §6 wording (T8) is not touched. HEAD remains `f4b2ff8`. The
 §4.1 checklist therefore converts from pre-merge to
 verify-at-commit-time.
 
 **Update (post-commit, same day)**: the five fixes were then committed
-and pushed — `fbe3be4` (README: judge defaults, enforcement note,
-runtime store list) and `7e3eed2` (e2e `:30` + p0c §4/§6 bracketed
+and pushed — `23bc309` (README: judge defaults, enforcement note,
+runtime store list) and `470acb9` (e2e `:30` + p0c §4/§6 bracketed
 CORRECTED annotations, insertion-only); `origin/main` now sits at
-`7e3eed2`, two commits past this document's `cac9a80` anchor basis —
-the citations above remain scoped to `cac9a80`, which is what the §4.1
+`470acb9`, two commits past this document's `f4b2ff8` anchor basis —
+the citations above remain scoped to `f4b2ff8`, which is what the §4.1
 checklist verifies. T8 (e2e §6 wording) remains untouched and open
-(MEASURED: `git show 7e3eed2` touches the e2e doc at `:30` only).
+(MEASURED: `git show 470acb9` touches the e2e doc at `:30` only).
 
 ---
 
@@ -64,7 +64,7 @@ passage, and local git refs. Verification classification per item:
 | 7.a.1 judges wiring | YES | README + EVALUATION current text quoted; `evals/run_evals.py:75` + `agents/model.py:29-31,71-74` read |
 | 7.a.2 diagram NOTE | YES | README:84-85 vs README:111-117 quoted |
 | 7.a.3 e2e `:30` / §6 wording | YES | e2e `:30`, `:131-133` quoted; `seed_data.py:82` + grep over `*.py` (0 hits); `approval/cli.py:36-43, 282, 289-295` read |
-| 7.a.4 p0c §4 staleness | YES | p0c `:162-163, :195-197` quoted; `git rev-parse origin/main` = `cac9a80`; `ac1ba3a..cac9a80` = 23 commits (CALCULATED); amendment-note grep = 0 |
+| 7.a.4 p0c §4 staleness | YES | p0c `:162-163, :195-197` quoted; `git rev-parse origin/main` = `f4b2ff8`; `e6770b5..f4b2ff8` = 23 commits (CALCULATED); amendment-note grep = 0 |
 | 7.a.5 blockers | RELAYED + grounded | EVALUATION §8.3 (`:266-269`) and §8.7 (`:276-277`) quoted; `docs/DEVPOST-DRAFT.md:131` shot-list heading confirmed |
 | 7.a.6 headed click | YES | p0c §2 `:98-107` read directly ("NOT done… UNKNOWN… PROJECTED, not evidence") |
 | 7.b.1 constant-time | YES | `human_gate.py:105` vs `:117/:123/:125/:133` read; greps over tests/ = 0 hits (3 patterns) |
@@ -82,7 +82,7 @@ passage, and local git refs. Verification classification per item:
 Taxonomy (senses pinned as in SYSTEM-REFERENCE §0.2, plus PROJECTED,
 which this document does use): **MEASURED** = a command was executed and
 its output recorded during this task (by this session or its subagents);
-**OBSERVED** = directly seen in repository files at HEAD `cac9a80`;
+**OBSERVED** = directly seen in repository files at HEAD `f4b2ff8`;
 **DOCUMENTED** = relayed from a cited project report; **CALCULATED** =
 arithmetic over MEASURED/OBSERVED values; **PROJECTED** = this document's
 forward-looking judgment (effort/impact estimates); **UNKNOWN** = not
@@ -269,7 +269,7 @@ concurrently. Tiny annotate-don't-erase edit.
 ## 2. Re-verification result per §7 item (step 2a evidence)
 
 All 15 re-verifiable observations **verified still accurate** at HEAD
-`cac9a80` / snapshot 19:29:55 UTC, and neither relayed item (7.a.5,
+`f4b2ff8` / snapshot 19:29:55 UTC, and neither relayed item (7.a.5,
 7.b.11) is contradicted by anything observed — none excluded for
 staleness (§5). Detail beyond
 §0's table:
@@ -298,9 +298,9 @@ staleness (§5). Detail beyond
   (`:272-295`, `consume=False` at `:282`) and replay leg (`:322-330`)
   (OBSERVED). The §6 sentence is imprecise about authority vs imports.
 - **7.a.4** — p0c `:162-163` "Nothing pushed … MEASURED" and `:195-197`
-  "origin/main is untouched at `ac1ba3a`. MEASURED." vs local
-  `origin/main = cac9a80` (MEASURED `git rev-parse`), which is
-  CALCULATED as 23 commits past `ac1ba3a`; no amendment note exists
+  "origin/main is untouched at `e6770b5`. MEASURED." vs local
+  `origin/main = f4b2ff8` (MEASURED `git rev-parse`), which is
+  CALCULATED as 23 commits past `e6770b5`; no amendment note exists
   (MEASURED grep).
 - **7.a.5** — video NOT recorded (EVALUATION §8.3, `:266-269`,
   DOCUMENTED; shot-list heading at `docs/DEVPOST-DRAFT.md:131`,
@@ -440,7 +440,7 @@ amplify rather than fix.
 
 ## 5. Items excluded for staleness (step 5)
 
-**None.** All 15 re-verifiable §7 observations held at HEAD `cac9a80`
+**None.** All 15 re-verifiable §7 observations held at HEAD `f4b2ff8`
 (§2); the two relayed items (7.a.5, 7.b.11) rest on their cited
 reports, contradicted by nothing observed; no post-SYSTEM-REFERENCE
 task has changed the code (MEASURED: HEAD unchanged, tracked files
@@ -490,21 +490,21 @@ cost/benefit still clears the bar before 2026-09-14.
 ## 7. Claim classification summary
 
 - **MEASURED** (command executed, output recorded, this task):
-  `git rev-parse HEAD`/`origin/main` = `cac9a80`; `git status` snapshot
+  `git rev-parse HEAD`/`origin/main` = `f4b2ff8`; `git status` snapshot
   (3 untracked files, zero modifications) at 19:29:55 UTC; all test
   greps cited in §2 (constant-time 0 hits, re-execution 0 hits,
   `"exp"` 0 hits, size-limit 0 hits, `modern_status_values` 0 hits
   over `*.py`, RUNTIME_DIR env reads 0 hits, supersession banners 0 hits,
   p0c amendment-note 0 hits, README `CORRECTION_TOKEN_SECRET` 0 hits);
   `git ls-files agent-memory` tracking results; `git for-each-ref
-  refs/remotes` (origin/main only); 23 commits `ac1ba3a..cac9a80`;
+  refs/remotes` (origin/main only); 23 commits `e6770b5..f4b2ff8`;
   runtime/ directory listing (via verification pass).
 - **OBSERVED** (in repo files at HEAD): every quoted code/doc line in
   §1-§3 with its `file:line` anchor (human_gate, correction_executor,
   web, cli, seed_data, case_management, show_rejected_calls,
   run_evals/model wiring, README/e2e/p0c/EVALUATION/DEVPOST-DRAFT/
   task-board/contract-002/decisions.md passages).
-- **CALCULATED**: 23 commits between `ac1ba3a` and `cac9a80`
+- **CALCULATED**: 23 commits between `e6770b5` and `f4b2ff8`
   (`git rev-list --count`).
 - **DOCUMENTED** (relayed from cited reports): 218 passed at this HEAD
   (SYSTEM-REFERENCE §8.1); 80.0% single-point accuracy and §5.1

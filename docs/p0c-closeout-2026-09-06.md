@@ -148,11 +148,11 @@ after the split pair; commit diffs +116/−27 and +35/−13).
 
 | # | Hash | Subject | Contents |
 |---|---|---|---|
-| 1 | `d3d8ebc` | Add rejected-call diagnostics log and viewer | `tools/case_management.py`, `scripts/show_rejected_calls.py`, `tests/test_rejected_call_diagnostics.py`, `docs/draft-rejection-diagnostics-2026-09-06.md` |
-| 2 | `a7536c9` | Restrict approval --bind to loopback; fix approver audit attribution | `approval/web.py` (bind set + approver kwarg — grouped deliberately: same component, one validation story, avoids an incoherent intermediate tree where the amended doc cites a fix not yet landed), `tests/test_approval_surface.py` (5 HTTP-layer tests + regression test), `docs/approval-web-loopback-fix-and-validation-2026-09-06.md` (with §10 + amendments), `docs/human-gate-e2e-validation-2026-09-05.md` (3 amendment blocks), `agent-memory/decisions.md` (D-2026-09-06-02 + closeout), both evidence dirs (isolated `runtime/` stores excluded by the unanchored `.gitignore` `runtime/` rule — the captured store dumps are the committable evidence) |
-| 3 | `e5c1975` | README editorial pass: overview, models, tree, running docs | README.md editorial half (+116/−27, pure reorganization) |
-| 4 | `03262b5` | Document the human-gate approval surface in README | README.md human-gate half (+35/−13, pure reorganization) |
-| 5 | `a11cdf6` | README: correct stale validation line and test-file count | README.md two one-line corrections |
+| 1 | `b2d153c` | Add rejected-call diagnostics log and viewer | `tools/case_management.py`, `scripts/show_rejected_calls.py`, `tests/test_rejected_call_diagnostics.py`, `docs/draft-rejection-diagnostics-2026-09-06.md` |
+| 2 | `44faf7c` | Restrict approval --bind to loopback; fix approver audit attribution | `approval/web.py` (bind set + approver kwarg — grouped deliberately: same component, one validation story, avoids an incoherent intermediate tree where the amended doc cites a fix not yet landed), `tests/test_approval_surface.py` (5 HTTP-layer tests + regression test), `docs/approval-web-loopback-fix-and-validation-2026-09-06.md` (with §10 + amendments), `docs/human-gate-e2e-validation-2026-09-05.md` (3 amendment blocks), `agent-memory/decisions.md` (D-2026-09-06-02 + closeout), both evidence dirs (isolated `runtime/` stores excluded by the unanchored `.gitignore` `runtime/` rule — the captured store dumps are the committable evidence) |
+| 3 | `ef91235` | README editorial pass: overview, models, tree, running docs | README.md editorial half (+116/−27, pure reorganization) |
+| 4 | `1d3f52e` | Document the human-gate approval surface in README | README.md human-gate half (+35/−13, pure reorganization) |
+| 5 | `be74e3f` | README: correct stale validation line and test-file count | README.md two one-line corrections |
 | 6 | (this commit) | Add P0-C closeout report | `docs/p0c-closeout-2026-09-06.md` |
 
 - **No AI attribution**: the commit-msg hook (`scripts/hooks/commit-msg`
@@ -164,14 +164,14 @@ after the split pair; commit diffs +116/−27 and +35/−13).
   session. MEASURED (`git status -b`: ahead of origin/main only).
   [CORRECTED 2026-09-06, later pushes: true when this report was
   written; later the same day the accumulated-work push published all
-  21 commits `ac1ba3a..eba7c2b` — this report's own commit included —
-  and origin/main subsequently advanced to `6dac326` (architecture
-  diagram) and `cac9a80` (DEVPOST-DRAFT fix). Push confirmations:
+  21 commits `e6770b5..7ded29b` — this report's own commit included —
+  and origin/main subsequently advanced to `c8fd329` (architecture
+  diagram) and `f4b2ff8` (DEVPOST-DRAFT fix). Push confirmations:
   `agent-memory/evaluation-fix-and-push-2026-09-06.md` §5 and
   `agent-memory/devpost-draft-accuracy-pass-2026-09-06.md` §4 (both
   local-only, untracked files); the range on origin is independently
-  verifiable via `git log ac1ba3a..cac9a80`.]
-- Commit 2 was amended once pre-finalization (`7b264fb` → `a7536c9`)
+  verifiable via `git log e6770b5..f4b2ff8`.]
+- Commit 2 was amended once pre-finalization (`7b264fb` → `44faf7c`)
   to normalize two PNG file modes copied from `/mnt/c` (100755→100644);
   message and content otherwise unchanged. OBSERVED.
 
@@ -194,21 +194,21 @@ no benchmark, canary, or other live LLM/API call was run this session.
 
 ```
 (pending) Add P0-C closeout report
-a11cdf6  README: correct stale validation line and test-file count
-03262b5  Document the human-gate approval surface in README
-e5c1975  README editorial pass: overview, models, tree, running docs
-a7536c9  Restrict approval --bind to loopback; fix approver audit attribution
-d3d8ebc  Add rejected-call diagnostics log and viewer
-f836966  (session-start HEAD) Document local-path/AI-reference audit; ...
+be74e3f  README: correct stale validation line and test-file count
+1d3f52e  Document the human-gate approval surface in README
+ef91235  README editorial pass: overview, models, tree, running docs
+44faf7c  Restrict approval --bind to loopback; fix approver audit attribution
+b2d153c  Add rejected-call diagnostics log and viewer
+8552390  (session-start HEAD) Document local-path/AI-reference audit; ...
 ```
 
 The branch remains locally ahead of origin/main (which includes the 15
 pre-session commits from the earlier accumulated-work landing);
-origin/main is untouched at `ac1ba3a`. MEASURED. [CORRECTED
+origin/main is untouched at `e6770b5`. MEASURED. [CORRECTED
 2026-09-06, later pushes: accurate when written; later that day the
-accumulated-work push moved origin/main to `eba7c2b` (all 21 commits
-`ac1ba3a..eba7c2b`, this report included), then `6dac326` and
-`cac9a80` followed — origin/main now sits at `cac9a80`. See the
+accumulated-work push moved origin/main to `7ded29b` (all 21 commits
+`e6770b5..7ded29b`, this report included), then `c8fd329` and
+`f4b2ff8` followed — origin/main now sits at `f4b2ff8`. See the
 matching correction in §4.]
 
 ## 7. Gates, review, and scope fences

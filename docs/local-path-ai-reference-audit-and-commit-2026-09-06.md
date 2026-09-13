@@ -23,12 +23,12 @@ Status: COMPLETE — final commit = §5 row 14.
 ## 0. Repository state at task start (MEASURED/OBSERVED)
 
 - HEAD = `68434e6` ("P0 human gate: deterministic case identity, draft
-  hygiene, approval surface"), parent `ac1ba3a`. OBSERVED via `git log`.
+  hygiene, approval surface"), parent `e6770b5`. OBSERVED via `git log`.
 - **Task-premise correction (OBSERVED):** the task brief said "no pushed
   history (there is none yet — confirm this)". This is FALSE for the repo
   as found: remote `origin` EXISTS
   (`noreply@example.com:el-informatico/reconciliation-investigator.git`) and
-  `origin/main` = `ac1ba3a` — i.e. history through `ac1ba3a` IS already
+  `origin/main` = `e6770b5` — i.e. history through `e6770b5` IS already
   pushed. What IS true: `68434e6` is local-only (`main` is "ahead 1").
   Consequence honored: nothing already-pushed is rewritten anywhere in
   this task; the only history modification is amending the never-pushed
@@ -195,8 +195,8 @@ CONTRIBUTING* anywhere, no `.github/`, no commit template
 `scripts/hooks/pre-commit` execs only the segregation guard — nothing
 inspects commit messages.
   [CORRECTED 2026-09-06, later commits — both halves now inverted:
-  b6402ec added scripts/hooks/commit-msg (something DOES inspect
-  commit messages), and 7a112d0 (D-2026-09-06-03) replaced the exec
+  9e2339e added scripts/hooks/commit-msg (something DOES inspect
+  commit messages), and cde3e6f (D-2026-09-06-03) replaced the exec
   with sequential aggregation of the segregation and sensitive-content
   guards (pre-commit no longer execs only the segregation guard).]
 The convention exists as prose in
@@ -317,13 +317,13 @@ the architect's scoping condition.
 
 ## 5. Phase 3 — commits created
 
-`origin/main` is untouched at `ac1ba3a` throughout (nothing pushed;
+`origin/main` is untouched at `e6770b5` throughout (nothing pushed;
 no branches or tags created; `stage2-pre-rewrite-backup` untouched).
 `68434e6` was **amended in place, message-only** (human-directed by
-task §3c for exactly this finding class): new hash `8cb403e`, tree
-byte-identical (`git diff 68434e6 8cb403e` — empty), message delta =
+task §3c for exactly this finding class): new hash `7c81f61`, tree
+byte-identical (`git diff 68434e6 7c81f61` — empty), message delta =
 exactly the removed trailer line + its blank, history position
-preserved (still first above `ac1ba3a`; the accumulated-work commits
+preserved (still first above `e6770b5`; the accumulated-work commits
 stack ON TOP, so the record honestly shows the closed work was
 committed after the human-gate commit, not reordered before it).
 Zero references to the old hash existed anywhere outside this report
@@ -331,19 +331,19 @@ Zero references to the old hash existed anywhere outside this report
 
 | # | hash | subject | contents |
 |---|---|---|---|
-| — | `8cb403e` | P0 human gate: deterministic case identity, draft hygiene, approval surface | amended `68434e6` (trailer removed; content unchanged) |
-| 1 | `b6402ec` | Make the no-AI-attribution commit rule visible and enforced | CONTRIBUTING.md, CLAUDE.md bullet, scripts/hooks/commit-msg |
-| 2 | `d3abd02` | Fix eval ground-truth leak; strip seed annotations from tool returns | evals/run_evals.py, tools/{seed_data,legacy_system,modern_system,transactions}.py, tests/test_eval_ground_truth_leak.py, leak audit+fix docs |
-| 3 | `bf21d5c` | Editorial pass: license metadata, EVALUATION and DEVPOST docs | LICENSE, pyproject.toml, .env.example, docs/EVALUATION.md, docs/DEVPOST-DRAFT.md, final-doc-config-cleanup doc |
-| 4 | `18b7b57` | Correct Z.AI credential-path docs; quarantine historical prompt | deploy/README.md, docs/credential-alternatives-prompt.md |
-| 5 | `09547cd` | Add token-workload audit and measured one-case canary | token-workload docs ×2, evals/token_canary.py, offline test, evidence dir |
-| 6 | `340bd39` | Require explicit --env-file in probes; drop sibling .env default | probes ×6, remediation doc, decisions.md D-2026-09-05-01 hunk |
-| 7 | `502042d` | Make probe evidence stems repo-relative; de-cite sibling in model doc | probes ×3 (stem hunks only), agents/model.py docstring |
-| 8 | `5b3325e` | Add Gemini-judge feasibility notes, canary and 5-case harness | agent-memory notes ×2, evals ×2, offline tests ×2, validation docs ×2, evidence dirs ×2 (35 files) |
-| 9 | `99e4280` | Add Groq parsing-retry canary and provider probe evidence | groq-preflight note, retry canary + offline test, groq probe/replay evidence ×3 |
-| 10 | `e13e971` | Record leak-free 5-case validation runs and evidence | clean-5case + gemini-groq final validation docs, evidence dirs ×2 (57 files) |
-| 11 | `bede011` | Close case-4 tool-param fabrication audit chain with index | case-4 docs ×5 |
-| 12 | `7544a34` | Document git identity audit, history rewrite, publish plan | git stage1-3 docs ×6, commit-history-audit, state-and-gap, rewrite evidence dir (12 files) |
+| — | `7c81f61` | P0 human gate: deterministic case identity, draft hygiene, approval surface | amended `68434e6` (trailer removed; content unchanged) |
+| 1 | `9e2339e` | Make the no-AI-attribution commit rule visible and enforced | CONTRIBUTING.md, CLAUDE.md bullet, scripts/hooks/commit-msg |
+| 2 | `cc6229d` | Fix eval ground-truth leak; strip seed annotations from tool returns | evals/run_evals.py, tools/{seed_data,legacy_system,modern_system,transactions}.py, tests/test_eval_ground_truth_leak.py, leak audit+fix docs |
+| 3 | `ea3b7f4` | Editorial pass: license metadata, EVALUATION and DEVPOST docs | LICENSE, pyproject.toml, .env.example, docs/EVALUATION.md, docs/DEVPOST-DRAFT.md, final-doc-config-cleanup doc |
+| 4 | `11488c6` | Correct Z.AI credential-path docs; quarantine historical prompt | deploy/README.md, docs/credential-alternatives-prompt.md |
+| 5 | `79607f5` | Add token-workload audit and measured one-case canary | token-workload docs ×2, evals/token_canary.py, offline test, evidence dir |
+| 6 | `170fb84` | Require explicit --env-file in probes; drop sibling .env default | probes ×6, remediation doc, decisions.md D-2026-09-05-01 hunk |
+| 7 | `0811fbe` | Make probe evidence stems repo-relative; de-cite sibling in model doc | probes ×3 (stem hunks only), agents/model.py docstring |
+| 8 | `06f49c8` | Add Gemini-judge feasibility notes, canary and 5-case harness | agent-memory notes ×2, evals ×2, offline tests ×2, validation docs ×2, evidence dirs ×2 (35 files) |
+| 9 | `3f1b89d` | Add Groq parsing-retry canary and provider probe evidence | groq-preflight note, retry canary + offline test, groq probe/replay evidence ×3 |
+| 10 | `1531f92` | Record leak-free 5-case validation runs and evidence | clean-5case + gemini-groq final validation docs, evidence dirs ×2 (57 files) |
+| 11 | `9d06252` | Close case-4 tool-param fabrication audit chain with index | case-4 docs ×5 |
+| 12 | `d7c3a90` | Document git identity audit, history rewrite, publish plan | git stage1-3 docs ×6, commit-history-audit, state-and-gap, rewrite evidence dir (12 files) |
 | 13 | `97f4313` | Add human-gate task plan and e2e run evidence | human-gate-task-plan, evidence dir (4 files) |
 | 14 | (this commit) | Document local-path/AI-reference audit; add decision D-2026-09-06-01 | this report + decisions.md D-2026-09-06-01 append |
 
@@ -369,7 +369,7 @@ the two deliberate holdovers).
   hunk (`strip_seed_annotations`, +25 lines) is pure leak-fix content;
   the human-gate hunks (`canonical_case_id` etc., +68) were already
   committed inside `68434e6`. No entanglement remained — the hunk
-  joined the leak-fix commit (`d3abd02`).
+  joined the leak-fix commit (`cc6229d`).
 - **`README.md`: HELD UNCOMMITTED.** Its single ~107-line diff hunk
   interleaves the editorial rewrite ("What this is", "Models &
   wiring", "Running", "Evaluation") with human-gate prose written on
@@ -399,24 +399,24 @@ the two deliberate holdovers).
   condition: segregation guard PASS, `uv sync --locked` clean (84
   packages), pytest 190 passed (all MEASURED above).
 
-## 8. Final git log (short form, ac1ba3a..HEAD plus anchor)
+## 8. Final git log (short form, e6770b5..HEAD plus anchor)
 
 ```
 97f4313 Add human-gate task plan and e2e run evidence
-7544a34 Document git identity audit, history rewrite, publish plan
-bede011 Close case-4 tool-param fabrication audit chain with index
-e13e971 Record leak-free 5-case validation runs and evidence
-99e4280 Add Groq parsing-retry canary and provider probe evidence
-5b3325e Add Gemini-judge feasibility notes, canary and 5-case harness
-502042d Make probe evidence stems repo-relative; de-cite sibling in model doc
-340bd39 Require explicit --env-file in probes; drop sibling .env default
-09547cd Add token-workload audit and measured one-case canary
-18b7b57 Correct Z.AI credential-path docs; quarantine historical prompt
-bf21d5c Editorial pass: license metadata, EVALUATION and DEVPOST docs
-d3abd02 Fix eval ground-truth leak; strip seed annotations from tool returns
-b6402ec Make the no-AI-attribution commit rule visible and enforced
-8cb403e P0 human gate: deterministic case identity, draft hygiene, approval surface
-ac1ba3a Add bounded retry for Groq parsing failures   <- origin/main (pushed; untouched)
+d7c3a90 Document git identity audit, history rewrite, publish plan
+9d06252 Close case-4 tool-param fabrication audit chain with index
+1531f92 Record leak-free 5-case validation runs and evidence
+3f1b89d Add Groq parsing-retry canary and provider probe evidence
+06f49c8 Add Gemini-judge feasibility notes, canary and 5-case harness
+0811fbe Make probe evidence stems repo-relative; de-cite sibling in model doc
+170fb84 Require explicit --env-file in probes; drop sibling .env default
+79607f5 Add token-workload audit and measured one-case canary
+11488c6 Correct Z.AI credential-path docs; quarantine historical prompt
+ea3b7f4 Editorial pass: license metadata, EVALUATION and DEVPOST docs
+cc6229d Fix eval ground-truth leak; strip seed annotations from tool returns
+9e2339e Make the no-AI-attribution commit rule visible and enforced
+7c81f61 P0 human gate: deterministic case identity, draft hygiene, approval surface
+e6770b5 Add bounded retry for Groq parsing failures   <- origin/main (pushed; untouched)
 ```
 
 (The final audit-report commit is added on top of `97f4313`; see §5
@@ -455,7 +455,7 @@ row 14.)
   verification; (4) README's GLM-5.3 build-engine line — accepted
   residual, routed to the human (§3.3).
 - **Final-state audit agent: 6/6 PASS** (MEASURED). origin/main
-  untouched at ac1ba3a; ahead 14 (amend + 13); exactly 3 refs (no new
+  untouched at e6770b5; ahead 14 (amend + 13); exactly 3 refs (no new
   branches/tags); amend diff empty + message clean + identity
   canonical; zero attribution shapes across all 14 commit messages
   (6 raw vendor-word hits, all technical/policy prose); zero

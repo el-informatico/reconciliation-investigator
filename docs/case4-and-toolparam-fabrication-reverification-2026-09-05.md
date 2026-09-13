@@ -5,7 +5,7 @@ Date: 2026-09-05 · Mode: READ-ONLY verification (no code changes, no tests, no
 benchmark/canary runs, no live LLM/API calls; this file is the only artifact
 created by this task) · Verifies: `docs/clean-5case-validation-2026-09-05.md`
 against `agent-memory/evidence/clean-5case-validation-2026-09-05/` and all
-prior runs · HEAD at task start: `ac1ba3a` (unchanged).
+prior runs · HEAD at task start: `e6770b5` (unchanged).
 
 **Relation to a pre-existing report.** A near-identical audit,
 `docs/case4-outcome-and-toolparam-fabrication-audit-2026-09-05.md` (mtime
@@ -379,7 +379,7 @@ with citations, as tagged.
 - `git status --porcelain` before vs after this task: **identical**, with the
   single sanctioned exception of this new untracked file
   (`docs/case4-and-toolparam-fabrication-reverification-2026-09-05.md`).
-  Before-snapshot captured at task start (HEAD `ac1ba3a`, 5 modified tracked
+  Before-snapshot captured at task start (HEAD `e6770b5`, 5 modified tracked
   files, untracked set as found); after-snapshot diffed against it.
 - No test, benchmark, canary, or eval executed; no live LLM/API call made; no
   configuration change; nothing committed, staged, or pushed (verified:

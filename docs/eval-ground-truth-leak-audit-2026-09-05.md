@@ -54,7 +54,7 @@ verified:
 5. **No unleaked runnable version ever existed** [MEASURED, git history]. The
    injection line was introduced in `2fbfab9` (2026-09-04T06:49:16-05:00, the
    commit that created `evals/run_evals.py`) and is byte-identical through
-   HEAD; `evals/run_evals.py`'s blob is unchanged from `f1caf38`
+   HEAD; `evals/run_evals.py`'s blob is unchanged from `76fd468`
    (2026-09-04T13:50:03-05:00) through HEAD, and every earlier tracked
    version contained the identical injection text at a different line number.
    Runtime artifacts independently corroborate that the label was live in the
@@ -161,7 +161,7 @@ historical run** [MEASURED, git + venv]: `uv.lock` is git-tracked and pins
 `strands-agents==1.54.0` / `strands-agents-evals==1.2.0` / 
 `strands-agents-tools==0.8.7` (hash-pinned, wheel 2026-08-27); the pins are
 unchanged since the bootstrap commit, and the single later lock-touching
-commit (`f1caf38`, removing `anthropic`) left the strands entries untouched.
+commit (`76fd468`, removing `anthropic`) left the strands entries untouched.
 The venv holds exactly one dist-info per package, all stamped
 2026-09-04 06:48 — one `uv` sync installed before the first eval run and
 never changed. The propagation behavior cited above is therefore the
@@ -351,7 +351,7 @@ Git facts underneath the table [all MEASURED from git unless noted]:
   "Place the five human-authored spec files verbatim" — the commit that
   created `evals/run_evals.py`) and never modified; only its line number
   drifted (81 → 87 → 96 → 99 → 101) as unrelated code changed above it.
-- `evals/run_evals.py` blob is byte-identical (`0f2a85f…`) from `f1caf38`
+- `evals/run_evals.py` blob is byte-identical (`0f2a85f…`) from `76fd468`
   (2026-09-04T13:50:03-05:00) through HEAD; every earlier tracked version
   contained the identical injection text.
 - `evals/run_sequential.py` (tracked, added `af90ddc`, 2026-09-04T11:53:37)
@@ -518,7 +518,7 @@ of the above. **UNKNOWN** = not determinable from available evidence.
 | 5 | Tool returns never carry scenario labels / `_comment`s | MEASURED (code) | §2.5 citations |
 | 6 | Evaluator-side `case.input` use is grader-only | MEASURED (code) | §2.6 citations |
 | 7 | All 6 drivers route through the injection | MEASURED (code) | §2.7 table (+ archived pre-edit snapshot line 143) |
-| 8 | Injection present since `2fbfab9`, byte-identical to HEAD; no unleaked runnable version ever existed | MEASURED (git) | pickaxe `-S`/`-G` over `evals/`; per-commit `git grep`; blob `0f2a85f` from `f1caf38`→HEAD |
+| 8 | Injection present since `2fbfab9`, byte-identical to HEAD; no unleaked runnable version ever existed | MEASURED (git) | pickaxe `-S`/`-G` over `evals/`; per-commit `git grep`; blob `0f2a85f` from `76fd468`→HEAD |
 | 9 | 89.8% run executed the leaky blob | MEASURED (git artifacts) + OBSERVED | its `preflight.txt:12-24` (tracked diff = fix only) + case-01 judge rows 4-5 |
 | 10 | 93.0% run executed the leaky blob | MEASURED (git artifacts) + OBSERVED | its `pre-run-git-status.txt` (evals/ unmodified) + case-01 rows 0-1, case-04 row 17 |
 | 11 | Both figures are judge-row aggregates incl. Output rows | DOCUMENTED | the two docs' own §-definitions of rows/judgeable |
@@ -544,7 +544,7 @@ is asserted from conversational memory alone.
 
 ## 9. ZERO-MODIFICATION ATTESTATION
 
-- **git status before** (captured at task start, HEAD `ac1ba3a`,
+- **git status before** (captured at task start, HEAD `e6770b5`,
   2026-09-05T13:56:05-05:00): 32 untracked entries (`agent-memory/evidence/…`
   run dirs and probe files, 3 `agent-memory/*.md`, 14 `docs/*.md`, 4
   `evals/*.py`, 4 `tests/test_*_offline.py`); zero tracked files modified.
@@ -552,7 +552,7 @@ is asserted from conversational memory alone.
 - **git status after** (captured at report completion, verified by count and
   diff): the identical 32 entries plus exactly this one new untracked file
   (`docs/eval-ground-truth-leak-audit-2026-09-05.md`) — 33 entries total,
-  no tracked file touched, HEAD still `ac1ba3a`, no stashes.
+  no tracked file touched, HEAD still `e6770b5`, no stashes.
 - **Full test suite NOT run** — this task is read-only and ran nothing that
   mutates state. **`scripts/verify.sh` NOT run** (its step 6 is the live
   benchmark — `EVAL_MODE=1 evals/run_evals.py` — explicitly out of scope).

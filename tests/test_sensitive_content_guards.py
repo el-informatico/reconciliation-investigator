@@ -1,5 +1,5 @@
 """2026-09-06 sensitive-content guard regression tests: the three
-weaknesses found by the 7a112d0 push-verification pass must not return,
+weaknesses found by the cde3e6f push-verification pass must not return,
 and the behaviors that were already correct must stay correct.
 
 Every test runs against a THROWAWAY git repository under pytest's

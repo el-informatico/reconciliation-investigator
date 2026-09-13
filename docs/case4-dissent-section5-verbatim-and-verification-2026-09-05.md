@@ -308,7 +308,7 @@ Specifically (L3 surface sweep + L1 figure-provenance):
   ticket-store-only"; "4th archived / 5th overall") are count statements
   about the pass's *existence*, which is DIRECT — they survive the
   re-attribution unchanged.
-- Nothing is on the public remote: `main` = `origin/main` = `ac1ba3a`, and
+- Nothing is on the public remote: `main` = `origin/main` = `e6770b5`, and
   all three case-4 reports are untracked; no commit on any ref references
   them.
 
@@ -551,7 +551,7 @@ historical record? (per item)
   files (`evals/run_evals.py`, `tools/legacy_system.py`,
   `tools/modern_system.py`, `tools/seed_data.py`, `tools/transactions.py`;
   all pre-existing modifications, untouched here) and 40 untracked entries;
-  HEAD `ac1ba3a394e7afc85980e49615a9a720aa8b5b4f`. AFTER (closing
+  HEAD `e6770b5c497a4abf9620e76497ec7c14cadc51da`. AFTER (closing
   verification command): 46 lines — the identical 45 plus exactly one new
   untracked line —
   `?? docs/case4-dissent-section5-verbatim-and-verification-2026-09-05.md`

@@ -204,7 +204,7 @@ file:line citations), NOT assumed from memory:
 | `CORRECTION_TOKEN_SECRET` | `orchestrator/human_gate.py:53` | HMAC signing key; required only when EVAL_MODE != "1" | yes — commented entry |
 | `GEMINI_API_KEY` | `evals/gemini_judge_canary.py:120` (+ consumers `gemini_judge_5case.py:195`, `groq_parsing_retry_canary.py:247`) | Gemini judge harness (exits if absent) | yes — active placeholder |
 | `GEMINI_MIN_INTERVAL_S` | `evals/gemini_judge_canary.py:78` | judge pacer; default "4.3", clamped [0, 3600] | documented with caveat: read at import time, BEFORE the .env loader — must be a real env var; a .env line is inert |
-| `CEREBRAS_API_KEY` | `probes/probe_cerebras.py:102`, `probes/probe_strands.py:86` | probes only; read from explicit `--env-file`, never this repo's `.env`; Cerebras ruled no-go (commit 7b10931) | documented as not-a-.env-var |
+| `CEREBRAS_API_KEY` | `probes/probe_cerebras.py:102`, `probes/probe_strands.py:86` | probes only; read from explicit `--env-file`, never this repo's `.env`; Cerebras ruled no-go (commit 5b1b632) | documented as not-a-.env-var |
 | `CLAUDE_PROJECT_DIR` | `scripts/guard-dangerous-commands.sh:54,77`, `guard-no-agent-teams.sh:17` | Claude Code harness-provided | noted (do not set) |
 | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | `scripts/ares-launch.sh:24,66,127` | FORBIDDEN — launcher refuses if set | noted (do not set) |
 | `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL` / any `ZAI_*` | — NO code reads anywhere (grep-verified) | forbidden for the app (Claude Code only, per policy) | explicit never-put-here warning |
@@ -341,7 +341,7 @@ modifications predate this session.)
    annotate-don't-erase header indicated.
 3. `agent-memory/decisions.md` — no superseding decision entry records
    the Z.AI-path removal / Groq switch (D-2026-09-04-09 stands as the
-   latest model-wiring entry; the switch lives only in commit f1caf38,
+   latest model-wiring entry; the switch lives only in commit 76fd468,
    the `agents/model.py` docstring, and dated docs). The ledger is
    append-only and controlling-session-owned.
 

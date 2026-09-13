@@ -24,7 +24,7 @@ Constraint compliance (all MEASURED/OBSERVED in this session):
   end-to-end: step 6 is the live 5-case Groq run; probes are also never
   exercised by verify.sh).
 - No commits, staging, or pushes: `git diff --cached` empty throughout,
-  HEAD unchanged at ac1ba3a (§7).
+  HEAD unchanged at e6770b5 (§7).
 - Secrets: none read, none printed, none written. The reviewer verified
   `.env`-membership claims by name-presence greps only (values never read).
 
@@ -64,7 +64,7 @@ Change surface: 6 files, all under `probes/` (plus the ledger entry in
 
 ```diff
 diff --git a/probes/README.md b/probes/README.md
-index f0df1d7..a22e9af 100644
+index 4b2c71f..92eb1c4 100644
 --- a/probes/README.md
 +++ b/probes/README.md
 @@ -9,9 +9,12 @@ SEPARATE from the application and the benchmark:
@@ -120,7 +120,7 @@ index f0df1d7..a22e9af 100644
  
  Evidence lands in `agent-memory/evidence/` (`.json` machine records,
 diff --git a/probes/probe_cerebras.py b/probes/probe_cerebras.py
-index 06bd4f4..250cef7 100644
+index 172b171..cc8a9f1 100644
 --- a/probes/probe_cerebras.py
 +++ b/probes/probe_cerebras.py
 @@ -35,7 +35,7 @@ from pathlib import Path
@@ -143,7 +143,7 @@ index 06bd4f4..250cef7 100644
      ap.add_argument("--model", default="gpt-oss-120b")
      ap.add_argument(
 diff --git a/probes/probe_common.py b/probes/probe_common.py
-index 17fbf5e..49e5dac 100644
+index 71ef546..49e5dac 100644
 --- a/probes/probe_common.py
 +++ b/probes/probe_common.py
 @@ -30,10 +30,6 @@ _KEY_PATTERNS = [
@@ -158,7 +158,7 @@ index 17fbf5e..49e5dac 100644
  def load_credentials(env_file: Path, names: list[str]) -> dict[str, str]:
      """Load ONLY `names` from a .env-style file. Values are never printed."""
 diff --git a/probes/probe_gemini.py b/probes/probe_gemini.py
-index c7b32ca..dd81753 100644
+index 6c960f2..de842e6 100644
 --- a/probes/probe_gemini.py
 +++ b/probes/probe_gemini.py
 @@ -32,7 +32,6 @@ import json
@@ -180,7 +180,7 @@ index c7b32ca..dd81753 100644
      ap.add_argument("--model", default="gemini-3.1-flash-lite")
      ap.add_argument(
 diff --git a/probes/probe_groq.py b/probes/probe_groq.py
-index 683f03d..b04ccd7 100644
+index cb4d112..8973159 100644
 --- a/probes/probe_groq.py
 +++ b/probes/probe_groq.py
 @@ -1,11 +1,11 @@
@@ -422,7 +422,7 @@ After: identical to before, plus exactly:
 - New (untracked): `docs/probes-sibling-env-remediation-2026-09-05.md`
   (this file).
 - Nothing staged (`git diff --cached` empty), nothing committed (HEAD
-  unchanged at ac1ba3a), nothing pushed (no network git operations).
+  unchanged at e6770b5), nothing pushed (no network git operations).
 
 ## 8. Claim classification
 
