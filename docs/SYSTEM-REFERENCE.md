@@ -945,7 +945,7 @@ and is excluded here.
 | File | What it establishes |
 |---|---|
 | `docs/eval-ground-truth-leak-audit-2026-09-05.md` | **The leak discovery and contamination ruling** (authority): mechanism (label verbatim in instruction → detector prompt → SDK "Original Task:" prefix to all nodes), reach, per-metric scope table, §7 classification of every historical figure. |
-| `docs/eval-ground-truth-leak-fix-2026-09-05.md` | The fix's three sites (instruction, `_comment` strip at read tools, rubric line), 18 new tests (132→150), §6 contaminated-figure enumeration + "GOING FORWARD ONLY" scope. |
+| `docs/eval-ground-truth-leak-fix-2026-09-05.md` | The fix's three sites (instruction, `_comment` strip at read tools, rubric line), regression module `tests/test_eval_ground_truth_leak.py` — 7 functions / 23 cases in the single commit `cc6229d` (the doc's "18 new tests, 132→150" is its pre-commit working-tree count; the +5 cases came from the clean-run task; committed-state suite 129→152, MEASURED 2026-09-14), §6 contaminated-figure enumeration + "GOING FORWARD ONLY" scope. |
 | `docs/clean-5case-validation-2026-09-05.md` | **The clean baseline** — the only leak-free run: 4/5 = 80.0% root cause (single OBSERVED data point), row rates, per-evaluator census, in-run retry event, token accounting, §11 comparison table (clean < contaminated is expected), §14 per-metric single-point limitations. |
 
 ### 6.3 Case-4 and tool-parameter fabrication chain
