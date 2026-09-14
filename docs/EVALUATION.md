@@ -256,9 +256,16 @@ Told as the engineering record tells it:
    the label was removed from the instruction (`build_instruction`); a
    `strip_seed_annotations` wrapper closed the latent `_comment` channel at
    all four read tools; one rubric line stopped referencing case metadata the
-   judge never received. Verified by 18 new tests; the offline suite went
-   132 → 150 passed, zero regressions. The fix changes methodology
-   **going forward only**. (DOCUMENTED)
+   judge never received. Verified by a new offline regression module,
+   `tests/test_eval_ground_truth_leak.py` — 7 test functions, 23
+   parametrized cases (18 written with the fix + 5 added by the next
+   task's clean-run validation, all landed in the single commit
+   `cc6229d`); the offline suite measured 129 → 152 at the committed
+   parent and fix commit, zero regressions (MEASURED 2026-09-14 via
+   pytest --collect-only at both commits; the fix doc §5's "18 new
+   tests; 132 → 150" and clean-run §1d's "150 → 155" were per-task
+   working-tree counts before that commit). The fix changes
+   methodology **going forward only**. (DOCUMENTED)
 4. **The ruling this document enforces.** Every root-cause-dependent accuracy
    figure produced before the fix is **MEASURED but methodologically
    contaminated — an upper bound on capability, not evidence of accuracy**,
@@ -374,9 +381,16 @@ retry/OTel/infrastructure-token figures.
 
 Most recent count on record: **291 passed** (offline suite re-executed
 2026-09-13, `uv run --locked pytest -q`).
-Lineage: 132 → 150 with the leak fix's 18 new tests
-(`docs/eval-ground-truth-leak-fix-2026-09-05.md` §5) → 155 (clean-run
-task, `docs/clean-5case-validation-2026-09-05.md` §1d) → 190 (human-gate
+Lineage: 129 → 152 with the leak fix's new regression module
+(`tests/test_eval_ground_truth_leak.py`: 7 test functions / 23
+parametrized cases — 18 from the leak-fix task + 5 from the clean-run
+task, landed together in `cc6229d`; MEASURED 2026-09-14 at the
+committed parent and fix commit. The fix doc
+`docs/eval-ground-truth-leak-fix-2026-09-05.md` §5 recorded "18 new
+tests; 132 → 150" and clean-run
+`docs/clean-5case-validation-2026-09-05.md` §1d "150 → 155" as per-task
+working-tree counts before that commit; every later link below is that
+task's own recorded count) → 190 (human-gate
 task, `docs/human-gate-e2e-validation-2026-09-05.md` §8) → 216
 (rejected-call diagnostics + loopback web tests,
 `docs/draft-rejection-diagnostics-2026-09-06.md` §7) → 217
